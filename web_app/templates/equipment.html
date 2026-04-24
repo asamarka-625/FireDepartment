@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Сведения о технике{% endblock %}
+
+{% block content %}
+<div class="equipment-page">
+    <h1>Сведения о технике</h1>
+
+    <div class="table-wrapper">
+        <table class="equipment-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Название</th>
+                    <th>Модель</th>
+                    <th>Номер</th>
+                    <th>Статус</th>
+                    <th>Обслуживание</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in machineries %}
+                <tr data-id="{{ m.id }}">
+                    <td>{{ m.id }}</td>
+                    <td>{{ m.title }}</td>
+                    <td>{{ m.model }}</td>
+                    <td>{{ m.number }}</td>
+
+                    <!-- статус -->
+                    <td>
+                        <span class="view status-text">{{ m.status }}</span>
+
+                        <select class="edit status-select hidden">
+                            {% set statuses = [
+                                "Включено", "Резерв", "Резерв (ЛСО)",
+                                "Ремонт", "ТО-1", "ТО-2", "ВП", "Выключена"
+                            ] %}
+                            {% for s in statuses %}
+                                <option value="{{ s }}" {% if m.status == s %}selected{% endif %}>
+                                    {{ s }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </td>
+
+                    <!-- обслуживание -->
+                    <td>
+                        <div class="view">
+                            {% if m.maintenance %}
+                                <div>{{ m.maintenance.note }}</div>
+                                <div>{{ m.maintenance.date }}</div>
+                            {% else %}
+                                <span class="no-maintenance">Нет</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="edit hidden maintenance-edit">
+                            <input type="text" placeholder="Причина"
+                                   value="{{ m.maintenance.note if m.maintenance else '' }}"
+                                   class="maintenance-note">
+
+                            <input type="date"
+                                   value="{{ m.maintenance.date if m.maintenance else '' }}"
+                                   class="maintenance-date">
+                        </div>
+                    </td>
+
+                    <!-- кнопки -->
+                    <td>
+                        <button class="edit-btn">Редактировать</button>
+                        <button class="save-btn hidden">Сохранить</button>
+                        <button class="cancel-btn hidden">Отмена</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll("tr[data-id]").forEach(row => {
+    const editBtn = row.querySelector(".edit-btn");
+    const saveBtn = row.querySelector(".save-btn");
+    const cancelBtn = row.querySelector(".cancel-btn");
+
+    const viewElements = row.querySelectorAll(".view");
+    const editElements = row.querySelectorAll(".edit");
+
+    // включить режим редактирования
+    editBtn.addEventListener("click", () => {
+        viewElements.forEach(el => el.classList.add("hidden"));
+        editElements.forEach(el => el.classList.remove("hidden"));
+
+        editBtn.classList.add("hidden");
+        saveBtn.classList.remove("hidden");
+        cancelBtn.classList.remove("hidden");
+    });
+
+    // отмена
+    cancelBtn.addEventListener("click", () => {
+        viewElements.forEach(el => el.classList.remove("hidden"));
+        editElements.forEach(el => el.classList.add("hidden"));
+
+        editBtn.classList.remove("hidden");
+        saveBtn.classList.add("hidden");
+        cancelBtn.classList.add("hidden");
+    });
+
+    // сохранение
+    saveBtn.addEventListener("click", async () => {
+        const id = row.dataset.id;
+
+        const status = row.querySelector(".status-select").value;
+        const note = row.querySelector(".maintenance-note").value;
+        const date = row.querySelector(".maintenance-date").value;
+
+        const payload = {
+            id: Number(id),
+            status: status.toLowerCase(),
+            maintenance: note && date ? {
+                note: note,
+                date: date
+            } : null
+        };
+
+        try {
+            const response = await apiRequest("/api/v1/machinery/update", {
+                method: "POST",
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                // обновляем отображение
+                row.querySelector(".status-text").textContent = status;
+
+                const viewBlock = row.querySelector("td:nth-child(6) .view");
+                if (payload.maintenance) {
+                    viewBlock.innerHTML = `
+                        <div>${payload.maintenance.note}</div>
+                        <div>${payload.maintenance.date}</div>
+                    `;
+                } else {
+                    viewBlock.innerHTML = `<span class="no-maintenance">Нет</span>`;
+                }
+
+                cancelBtn.click(); // выйти из режима редактирования
+            } else {
+                alert("Ошибка сохранения");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Ошибка");
+        }
+    });
+});
+</script>
+
+{% endblock %}

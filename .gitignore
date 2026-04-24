@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Venv
+.venv
+
+# Logs
+*.log
+
+# Файлы IDE
+.idea/
+.vs/
+
+# Other
+users.json
+table.xlsx
+init_db.py

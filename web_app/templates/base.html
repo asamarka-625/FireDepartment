@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+
+<div class="layout">
+    <aside class="sidebar">
+        <div class="structure">
+            <p class="structure-title">{{ department }}</p>
+            {% for section in sections %}
+                <div class="department">
+                    <button type="button" class="accordion">
+                        {{ section.title }}
+                    </button>
+
+                    <div class="panel">
+                        <a href="/equipment/{{ section.id }}">Сведения о технике</a>
+                        <a href="/create/{{ section.id }}">Создать строевую записку</a>
+                        <a href="/history/{{ section.id }}">История записок</a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </aside>
+
+    <!-- ОСНОВНОЙ КОНТЕНТ -->
+    <main class="content">
+        {% block content %}{% endblock %}
+    </main>
+
+</div>
+
+<script src="/static/js/main.js"></script>
+</body>
+</html>

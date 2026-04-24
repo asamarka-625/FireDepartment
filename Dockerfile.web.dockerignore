@@ -1,0 +1,24 @@
+# Файлы Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Файлы venv
+.venv/
+
+# Файлы IDE
+.idea/
+
+# Docker
+Dockerfile
+docker-compose.yml
+
+# Git
+.git
+.gitignore
+
+# Other
+alembic.ini
+alembic/

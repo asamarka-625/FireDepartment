@@ -1,0 +1,168 @@
+/* База */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 250px;
+    height: 100vh;
+    background-color: #1e2a38;
+    color: white;
+    padding: 20px;
+
+    position: fixed;
+    left: 0;
+    top: 0;
+}
+
+/* Лого */
+.logo {
+    margin-bottom: 20px;
+}
+
+/* Заголовок структуры */
+.structure-title {
+    font-size: 14px;
+    opacity: 0.7;
+    margin-bottom: 10px;
+}
+
+.content {
+    margin-left: 250px;
+    min-height: 100vh;
+    padding: 20px;
+
+    display: block; /* ❗ убираем flex */
+}
+
+/* Accordion */
+.accordion {
+    width: 100%;
+    background-color: #2f3e4e;
+    color: white;
+    cursor: pointer;
+    padding: 10px;
+    border: none;
+    text-align: left;
+    margin-top: 10px;
+    border-radius: 5px;
+    transition: 0.2s;
+}
+
+.accordion:hover {
+    background-color: #3c4f63;
+}
+
+/* Панель */
+.panel {
+    display: none;
+    margin-top: 5px;
+}
+
+/* Ссылки */
+.panel a {
+    display: block;
+    padding: 8px 10px;
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    border-radius: 5px;
+}
+
+.panel a:hover {
+    background-color: #3c4f63;
+}
+
+/* Страница */
+.equipment-page {
+    width: 100%;
+}
+
+/* Таблица */
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.equipment-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* Заголовки */
+.equipment-table th {
+    background-color: #1e2a38;
+    color: white;
+    padding: 12px;
+    text-align: left;
+}
+
+/* Ячейки */
+.equipment-table td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+/* Обслуживание */
+.maintenance {
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.no-maintenance {
+    color: #888;
+}
+
+.status-select {
+    padding: 5px;
+    border-radius: 5px;
+}
+
+.maintenance-edit {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.maintenance-edit input {
+    padding: 5px;
+    font-size: 12px;
+}
+
+.hidden {
+    display: none;
+}
+
+.edit-btn,
+.save-btn,
+.cancel-btn {
+    padding: 5px 8px;
+    margin: 2px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.edit-btn {
+    background-color: #1976d2;
+    color: white;
+}
+
+.save-btn {
+    background-color: #2e7d32;
+    color: white;
+}
+
+.cancel-btn {
+    background-color: #9e9e9e;
+    color: white;
+}

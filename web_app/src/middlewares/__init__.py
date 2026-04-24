@@ -1,0 +1,1 @@
+from web_app.src.middlewares.authentication import AuthenticationMiddleware

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict yKVjGw4flqDrSBWZx9qTChOT1xM8zY3LrQOtbsCDJVCaSrQa5wBMX5xbJqVnY5E
+\restrict geRe2Mf63vfvfC5qm2wbMr4tfQk0MgjaAzrcpfB3aDPlcofkpd6iwezIuLaleFT
 
 -- Dumped from database version 16.11
 -- Dumped by pg_dump version 16.11
@@ -166,6 +166,44 @@ ALTER SEQUENCE public.maintenance_id_seq OWNED BY public.maintenance.id;
 
 
 --
+-- Name: reports; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.reports (
+    id integer NOT NULL,
+    data jsonb NOT NULL,
+    date date NOT NULL,
+    section_id integer NOT NULL,
+    created_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone
+);
+
+
+ALTER TABLE public.reports OWNER TO test;
+
+--
+-- Name: reports_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.reports_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.reports_id_seq OWNER TO test;
+
+--
+-- Name: reports_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.reports_id_seq OWNED BY public.reports.id;
+
+
+--
 -- Name: sections; Type: TABLE; Schema: public; Owner: test
 --
 
@@ -212,7 +250,8 @@ CREATE TABLE public.users (
     password_hash character varying(255) NOT NULL,
     department_id integer NOT NULL,
     created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone
+    updated_at timestamp without time zone,
+    admin boolean NOT NULL
 );
 
 
@@ -262,6 +301,13 @@ ALTER TABLE ONLY public.maintenance ALTER COLUMN id SET DEFAULT nextval('public.
 
 
 --
+-- Name: reports id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.reports ALTER COLUMN id SET DEFAULT nextval('public.reports_id_seq'::regclass);
+
+
+--
 -- Name: sections id; Type: DEFAULT; Schema: public; Owner: test
 --
 
@@ -280,7 +326,7 @@ ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_
 --
 
 COPY public.alembic_version (version_num) FROM stdin;
-e6ae54741e34
+52731c9cf214
 \.
 
 
@@ -321,6 +367,7 @@ COPY public.departments (id, title, created_at, updated_at) FROM stdin;
 30	гку "технический центр"	2026-04-22 13:00:55.533599	\N
 31	гу "умц"	2026-04-22 13:00:55.533599	\N
 32	псс	2026-04-22 13:00:55.533599	\N
+33	Администраторы	2026-04-28 12:29:24.823841	\N
 \.
 
 
@@ -381,7 +428,6 @@ COPY public.machineries (id, title, model, number, status, section_id, created_a
 51	АЦ 3,2-40/4	Камаз 43265	Н 267 МТ 198	ON	9	2026-04-22 13:49:00.504917	\N
 52	АЛ-55	IVECO	В 866 ТН 98	ON	9	2026-04-22 13:49:00.504917	\N
 53	оперативный авт.	Haval Dargo	У 897 УК 198	ON	9	2026-04-22 13:49:00.504917	\N
-54	оперативный авт.	GAZelle NEXT	К 706 НТ 198	ON	9	2026-04-22 13:49:00.504917	\N
 55	Хозяйственный авт.	GAZ Валдай	В 033 УН 98	ON	9	2026-04-22 13:49:00.504917	\N
 56	оперативный авт.	Форд Фокус	В 577 УУ 178	ON	10	2026-04-22 13:49:00.504917	\N
 57	АЦ 4-40	КАМАЗ 43253	В 477 ХВ 198	ON	11	2026-04-22 13:49:00.504917	\N
@@ -411,6 +457,7 @@ COPY public.machineries (id, title, model, number, status, section_id, created_a
 81	Лодка моторная	Фаворит	РЛА 13-44	ON	13	2026-04-22 13:49:00.504917	\N
 82	Автоприцеп	SHARK 9	АТ 8999678	ON	13	2026-04-22 13:49:00.504917	\N
 83	Хозяйственный авт.	GAZ -А22R32 NEXT	К 259 РВ 198	ON	13	2026-04-22 13:49:00.504917	\N
+54	оперативный авт.	GAZelle NEXT	К 706 НТ 198	TO2	9	2026-04-22 13:49:00.504917	2026-04-28 12:49:36.641994
 84	Лодка гребная	спасательная	\N	ON	13	2026-04-22 13:49:00.504917	\N
 85	АЦ 5,0-40	MAN TGM 18.340	В 353 СС 178	ON	14	2026-04-22 13:49:00.504917	\N
 86	АЦ 3,5-40	MAN TGM 15.340	В 876 УВ 178	ON	14	2026-04-22 13:49:00.504917	\N
@@ -599,13 +646,9 @@ COPY public.machineries (id, title, model, number, status, section_id, created_a
 269	АТ автокран	КС-55713-1 (кран 25т.)	В 138 МХ 178	ON	32	2026-04-22 13:49:00.504917	\N
 270	АТ автокран	КС-65713-1 (кран 50т.)	Т 289 ТР 198	ON	32	2026-04-22 13:49:00.504917	\N
 271	АТ оперативно-служебный авт.	УАЗ Патриот	К 066 АА 198	ON	33	2026-04-22 13:49:00.504917	\N
-272	АТ АСА	2327NТ (FORD TRANSIT)	К235УХ 198	ON	33	2026-04-22 13:49:00.504917	\N
-273	АТ АСА	"ПОЖСНАБ" (МАЗ 4371)	У 118 ХС 198	ON	33	2026-04-22 13:49:00.504917	\N
 274	АТ АСА	FORD TRANSIT 460L EF	М293ОН 198	ON	33	2026-04-22 13:49:00.504917	\N
 275	АТ АСА-СВ	271941 (ГАЗ-А32R23)	В 150 ТР 198	ON	33	2026-04-22 13:49:00.504917	\N
 276	АТ АГСО	120210-01 (ПАЗ 320530-04)	Е372ВО 198 RUS	ON	33	2026-04-22 13:49:00.504917	\N
-277	АТ оперативно-служебный авт.	"Renault Duster"	А 422 ЕР 198	ON	34	2026-04-22 13:49:00.504917	\N
-278	ПС маломерное моторное судно	"АЛЯСКА SM 1163"	РЛА 18-89	ON	35	2026-04-22 13:49:00.504917	\N
 279	ПС маломерное моторное судно	"Охта-24"	РЛА 18-90	ON	35	2026-04-22 13:49:00.504917	\N
 280	ПС маломерное моторное судно	БЛ-820	АО 01-14 rus78	ON	35	2026-04-22 13:49:00.504917	\N
 281	ПС маломерное моторное судно	JAEGER М-600	AO 02-80 rus 78	ON	35	2026-04-22 13:49:00.504917	\N
@@ -624,8 +667,6 @@ COPY public.machineries (id, title, model, number, status, section_id, created_a
 294	ПС Гидроцикл	SEA DOO FISH PRO SPORT IDF 170	АН 13-44 rus78	ON	35	2026-04-22 13:49:00.504917	\N
 295	АТ АСВ	Ford-Transit	А671НХ 198	ON	35	2026-04-22 13:49:00.504917	\N
 296	АТ АСА-СВ	ИАЦ-1767М9 (ГАЗ-А31R23)	Е 118 УК 198	ON	35	2026-04-22 13:49:00.504917	\N
-297	АТ снегоход	Yamaha VK540E	РК 6527 78	ON	35	2026-04-22 13:49:00.504917	\N
-298	АТ снегоболотоход	Stels ATV800 Гепард	4533 СТ 78	ON	35	2026-04-22 13:49:00.504917	\N
 299	АТ снегоболотоход	Stels ATV800 Гепард	4532 СТ 78	ON	35	2026-04-22 13:49:00.504917	\N
 300	АТ АСВ	578222 МАКАР (КамАЗ)	Н296В М198	ON	35	2026-04-22 13:49:00.504917	\N
 301	ПС маломерное моторное судно	"ФАВОРИТ F-470"	АН 34-50 rus78	ON	36	2026-04-22 13:49:00.504917	\N
@@ -641,6 +682,10 @@ COPY public.machineries (id, title, model, number, status, section_id, created_a
 311	АТ снегоболотоход	Stels ATV800 Гепард	4388 СТ 78	ON	44	2026-04-22 13:49:00.504917	\N
 312	ПС маломерное моторное судно	"Фаворит F-470"	АН 34-49 rus78	ON	44	2026-04-22 13:49:00.504917	\N
 313	ПС Гидроцикл	SEA-DOO RXT-325-X	АН 35-16 rus78	ON	44	2026-04-22 13:49:00.504917	\N
+273	АТ АСА	"ПОЖСНАБ" (МАЗ 4371)	У 118 ХС 198	RESERVE_LSO	33	2026-04-22 13:49:00.504917	2026-04-28 09:26:35.419518
+298	АТ снегоболотоход	Stels ATV800 Гепард	4533 СТ 78	VP	35	2026-04-22 13:49:00.504917	2026-04-28 11:30:11.249867
+297	АТ снегоход	Yamaha VK540E	РК 6527 78	TO2	35	2026-04-22 13:49:00.504917	2026-04-28 11:35:38.875504
+277	АТ оперативно-служебный авт.	"Renault Duster"	А 422 ЕР 198	RESERVE_LSO	34	2026-04-22 13:49:00.504917	2026-04-28 11:59:27.515525
 314	ПС моторно-гребная лодка	"Пелла-Фиорд"	б/н	ON	45	2026-04-22 13:49:00.504917	\N
 315	ПС маломерное моторное судно	"ФАВОРИТ F-470"	АН 34-52 rus78	ON	45	2026-04-22 13:49:00.504917	\N
 316	ПС гребная лодка	Волга	б/н	ON	45	2026-04-22 13:49:00.504917	\N
@@ -732,6 +777,8 @@ COPY public.machineries (id, title, model, number, status, section_id, created_a
 402	ПС СВП	"СЛАВИР 6"	АО 23-46 rus78	ON	69	2026-04-22 13:49:00.504917	\N
 403	ПС маломерное моторное судно	"РАПТОР М-550А"(60)	AH 08-24 rus78	ON	69	2026-04-22 13:49:00.504917	\N
 1	оперативный авт.	RENAULT Duster	К 911 НК 198	TO1	1	2026-04-22 13:49:00.504917	2026-04-24 13:43:58.189454
+272	АТ АСА	2327NТ (FORD TRANSIT)	К235УХ 198	RESERVE	33	2026-04-22 13:49:00.504917	2026-04-28 09:26:22.144941
+278	ПС маломерное моторное судно	"АЛЯСКА SM 1163"	РЛА 18-89	RESERVE_LSO	35	2026-04-22 13:49:00.504917	2026-04-28 11:36:14.50846
 \.
 
 
@@ -741,6 +788,21 @@ COPY public.machineries (id, title, model, number, status, section_id, created_a
 
 COPY public.maintenance (id, note, date, machinery_id, created_at, updated_at) FROM stdin;
 1	fdsf	2026-04-09	1	2026-04-24 13:44:10.896535	\N
+2	gfdg	2026-04-02	273	2026-04-28 09:26:53.677918	\N
+4	hgfhf	2026-04-09	297	2026-04-28 11:35:38.875504	\N
+7	sds	2026-04-01	277	2026-04-28 11:59:27.515525	\N
+8	fdg	2026-04-02	54	2026-04-28 12:49:44.939526	\N
+\.
+
+
+--
+-- Data for Name: reports; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.reports (id, data, date, section_id, created_at, updated_at) FROM stdin;
+9	[{"id": 271, "model": "УАЗ Патриот", "title": "АТ оперативно-служебный авт.", "number": "К 066 АА 198", "status": "Включено", "maintenance": null}, {"id": 274, "model": "FORD TRANSIT 460L EF", "title": "АТ АСА", "number": "М293ОН 198", "status": "Включено", "maintenance": null}, {"id": 275, "model": "271941 (ГАЗ-А32R23)", "title": "АТ АСА-СВ", "number": "В 150 ТР 198", "status": "Включено", "maintenance": null}, {"id": 276, "model": "120210-01 (ПАЗ 320530-04)", "title": "АТ АГСО", "number": "Е372ВО 198 RUS", "status": "Включено", "maintenance": null}, {"id": 273, "model": "\\"ПОЖСНАБ\\" (МАЗ 4371)", "title": "АТ АСА", "number": "У 118 ХС 198", "status": "Резерв (ЛСО)", "maintenance": {"date": "2026-04-02", "note": "gfdg"}}, {"id": 272, "model": "2327NТ (FORD TRANSIT)", "title": "АТ АСА", "number": "К235УХ 198", "status": "Резерв", "maintenance": null}]	2026-04-28	33	2026-04-28 09:41:14.465368	\N
+15	[{"id": 279, "model": "\\"Охта-24\\"", "title": "ПС маломерное моторное судно", "number": "РЛА 18-90", "status": "Включено", "maintenance": null}, {"id": 280, "model": "БЛ-820", "title": "ПС маломерное моторное судно", "number": "АО 01-14 rus78", "status": "Включено", "maintenance": null}, {"id": 281, "model": "JAEGER М-600", "title": "ПС маломерное моторное судно", "number": "AO 02-80 rus 78", "status": "Включено", "maintenance": null}, {"id": 282, "model": "JAEGER М-600SW", "title": "ПС маломерное моторное судно", "number": "АО 01-02 rus 78", "status": "Включено", "maintenance": null}, {"id": 283, "model": "БЛ-820", "title": "ПС маломерное моторное судно", "number": "РЛА 20-85", "status": "Включено", "maintenance": null}, {"id": 284, "model": "БЛ МСС-820", "title": "ПС маломерное моторное судно", "number": "AH 25-48 rus78", "status": "Включено", "maintenance": null}, {"id": 285, "model": "\\"Буревестник Б790\\"", "title": "ПС маломерное моторное судно", "number": "АН 26-87 rus78", "status": "Включено", "maintenance": null}, {"id": 286, "model": "\\"Урал-650\\"", "title": "ПС маломерное моторное судно", "number": "РЛА 22-32", "status": "Включено", "maintenance": null}, {"id": 287, "model": "\\"ХИВУС-10\\"", "title": "ПС СВП", "number": "№ РЛА 19-41", "status": "Включено", "maintenance": null}, {"id": 288, "model": "\\"Славир-9\\"", "title": "ПС СВП", "number": "АО 06-48 rus78", "status": "Включено", "maintenance": null}, {"id": 289, "model": "\\"Север 750К\\"", "title": "ПС СОК", "number": "АО 03-57 rus78", "status": "Включено", "maintenance": null}, {"id": 290, "model": "\\"Славир 9У\\"", "title": "ПС СВП", "number": "АН 23-45 rus78", "status": "Включено", "maintenance": null}, {"id": 291, "model": "\\"Пелла-Фиорд\\"", "title": "ПС моторно-гребная лодка", "number": "б\\\\н", "status": "Включено", "maintenance": null}, {"id": 292, "model": "АР11220000ГЧ (Нерпа)", "title": "ПС СОК", "number": "AO 01-01 rus 78", "status": "Включено", "maintenance": null}, {"id": 293, "model": "ШЕРП N", "title": "АТ снегоболотоход", "number": "6161 СЕ 78RUS", "status": "Включено", "maintenance": null}, {"id": 294, "model": "SEA DOO FISH PRO SPORT IDF 170", "title": "ПС Гидроцикл", "number": "АН 13-44 rus78", "status": "Включено", "maintenance": null}, {"id": 295, "model": "Ford-Transit", "title": "АТ АСВ", "number": "А671НХ 198", "status": "Включено", "maintenance": null}, {"id": 296, "model": "ИАЦ-1767М9 (ГАЗ-А31R23)", "title": "АТ АСА-СВ", "number": "Е 118 УК 198", "status": "Включено", "maintenance": null}, {"id": 299, "model": "Stels ATV800 Гепард", "title": "АТ снегоболотоход", "number": "4532 СТ 78", "status": "Включено", "maintenance": null}, {"id": 300, "model": "578222 МАКАР (КамАЗ)", "title": "АТ АСВ", "number": "Н296В М198", "status": "Включено", "maintenance": null}, {"id": 298, "model": "Stels ATV800 Гепард", "title": "АТ снегоболотоход", "number": "4533 СТ 78", "status": "ВП", "maintenance": null}, {"id": 297, "model": "Yamaha VK540E", "title": "АТ снегоход", "number": "РК 6527 78", "status": "ТО-2", "maintenance": {"date": "2026-04-09", "note": "hgfhf"}}, {"id": 278, "model": "\\"АЛЯСКА SM 1163\\"", "title": "ПС маломерное моторное судно", "number": "РЛА 18-89", "status": "Резерв (ЛСО)", "maintenance": null}]	2026-04-28	35	2026-04-28 11:32:15.519995	2026-04-28 11:43:33.310433
+22	[{"id": 48, "model": "МАЗ", "title": "АЦ 3,5-40 (5309)", "number": "Т 875 СМ 198", "status": "Включено", "maintenance": null}, {"id": 49, "model": "MAN TGM", "title": "АЦ 3,5-40", "number": "В 823 ТХ 178", "status": "Включено", "maintenance": null}, {"id": 50, "model": "Камаз 43265", "title": "АЦ 3,2 -40/4", "number": "Н 164 ВХ 198", "status": "Включено", "maintenance": null}, {"id": 51, "model": "Камаз 43265", "title": "АЦ 3,2-40/4", "number": "Н 267 МТ 198", "status": "Включено", "maintenance": null}, {"id": 52, "model": "IVECO", "title": "АЛ-55", "number": "В 866 ТН 98", "status": "Включено", "maintenance": null}, {"id": 53, "model": "Haval Dargo", "title": "оперативный авт.", "number": "У 897 УК 198", "status": "Включено", "maintenance": null}, {"id": 55, "model": "GAZ Валдай", "title": "Хозяйственный авт.", "number": "В 033 УН 98", "status": "Включено", "maintenance": null}, {"id": 54, "model": "GAZelle NEXT", "title": "оперативный авт.", "number": "К 706 НТ 198", "status": "ТО-2", "maintenance": {"date": "2026-04-02", "note": "fdg"}}]	2026-04-28	9	2026-04-28 13:00:08.996694	\N
 \.
 
 
@@ -825,39 +887,40 @@ COPY public.sections (id, title, department_id, created_at, updated_at) FROM std
 -- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: test
 --
 
-COPY public.users (id, email, password_hash, department_id, created_at, updated_at) FROM stdin;
-33	admiral_pso@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$qtW6NwaAcC4FYOyds7YWAg$3RKdxsDtVca+eTyDoh/8vicEvg7aInqUoWK9Dvef070	1	2026-04-22 13:13:42.802029	\N
-34	vasileostrov_pso@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$SclZC0GIca4VYmyN0XqPcQ$wARrPyOwycnHWSym53EUHKwEEiH+jiLY5jib6Sj/Dkc	2	2026-04-22 13:13:42.802029	\N
-35	psch21@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$U0ppjdFaq3VuDWEshVAKQQ$4NkvQE1rILEXr2Pzkw/Oc1KwFva3V9UI3xmnXX5cS6I	3	2026-04-22 13:13:42.802029	\N
-36	psch60@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$i/H+v/d+L4VwLkUIgVAKwQ$IS2Achn5+oOx4N3+M8uol5uPsKn7uelOtx5lsN/d8KA	4	2026-04-22 13:13:42.802029	\N
-37	psch63@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$fS/FGEPoPeecs5ayVqrVmg$rJk5pfz9J/FbA64/LOC1BK0sbq5vZ+se3xJXefuZBso	5	2026-04-22 13:13:42.802029	\N
-38	psch67@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$EWKMsZaSslYqJaQ05hzjXA$hpV7tkpV40lTba/T8F1A3eYJ4xG5jB73AKVx3OO8iDY	6	2026-04-22 13:13:42.802029	\N
-39	psch75@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$Q4gxptSak7IWAkAoxbi39g$m3/5L8IxNjcEWgAWLYBSLBtYSUlgBo0xkQpiRU4jEHU	7	2026-04-22 13:13:42.802029	\N
-40	psch42@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$0/rfm1NqLUWIESLEGGPMOQ$SaF6ID2tlc1bTgyhmOoyQ2+nNMBEoCSozy6Dv/oDEsk	8	2026-04-22 13:13:42.802029	\N
-41	psch48@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$yHkPwZhTqrUW4ryX0hqDUA$2eI0JzuboQEBdRzAut9jvrvC1jhcHtP1djgeKj0Xmss	9	2026-04-22 13:13:42.802029	\N
-42	krgvardia_pso@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$2BvDGGMMIeRcS2kNoVTKGQ$9V2JBqXc/1+GVNycRr2c/mgt8mFkOodP9nkJWzlIn+I	10	2026-04-22 13:13:42.802029	\N
-43	psch20@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$31tLSSmFsDbGOGdsTen9/w$A3nkinYdrwCJmkDsU+d7ATBz3dIzne+qAhGiD8mJUYw	11	2026-04-22 13:13:42.802029	\N
-44	psch33@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$es8Zg1BqjTFmTEmJkTLm/A$Umd9WQZvFmA1NXQwZIeQAMN1bNyZ+Ovzmkxiumx/6Gg	12	2026-04-22 13:13:42.802029	\N
-45	psch47@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$kxKiVEqJca71HgOAsFaKUQ$1tA750vPmqfK1H1IXq+Z80rUTEqJjTPx8XYPmUG1Q6s	13	2026-04-22 13:13:42.802029	\N
-46	psch57@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$n3Pu/Z/z/h+DMGZsTekdYw$md3iXhd0r6e8GXQIUXIGXMR+JmXFrnCLbdtW7ndRKd0	14	2026-04-22 13:13:42.802029	\N
-47	psch43@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$hBCCEIKQsvYeI2RsrfUegw$Cby49V+mQmq5FY4qoDuI6E038rmbWf62f/5fgcVPBLs	15	2026-04-22 13:13:42.802029	\N
-48	psch39@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$RohxTglhzFnrHWMMgTDm/A$PQuVsnQ8NH1V7rkUgyMkRlH1CJ1nB8s3/GWqAYpQe5g	16	2026-04-22 13:13:42.802029	\N
-49	psch52@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$hvDeW4vx3huDUGpN6Z2Tsg$yMgWO9j8y6gYAxlR2+Nh5YfWtPOhfvIK/YGlsfVAYqk	17	2026-04-22 13:13:42.802029	\N
-50	psch61@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$Sill7J3zfi+lNGasFYIQIg$7qQnfZxbWdC/3kZpyqzGxXZoB8qFlNtF03F9dqCX+4M	18	2026-04-22 13:13:42.802029	\N
-51	petrograd_pso@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$WctZa20tJQQgJGRsjdE6Bw$8cEA540Xw1485T4YW3SLCB+6sMdAqppkKqezolBTx8k	19	2026-04-22 13:13:42.802029	\N
-52	psch54@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$Ywxh7P2/N+Zc6733vnfufQ$FOtsjQC5FTavoOmjb/e1ZjcJ9ze1GRMGGuCKliALi2k	20	2026-04-22 13:13:42.802029	\N
-53	psch53@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$qpVyLmWsNcbYO0dICSEkRA$ZiV+W7lvC5ZPzlIqFThgv75GBI8dP1Vul68DTE1pJJA	21	2026-04-22 13:13:42.802029	\N
-54	psch59@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$E8IYA+CcEwJgDCEEAECIkQ$P6oP2Ia1X6xkdns+UAQSOgY5gP860eUsrDFJpnnfkzc	22	2026-04-22 13:13:42.802029	\N
-55	psch76@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$QciZU4pR6t0bY+xdizEmRA$ixwjyxW+OAim2ezMR3s76nyle6N5aY/QbQ126+z0kWM	23	2026-04-22 13:13:42.802029	\N
-56	psch23@gocchs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$d44RghBCyPm/l5LSOse4Nw$av3of6HCngw7fEalTv8peCkbLaFHINDcMHPuTbmP5Xs	24	2026-04-22 13:13:42.802029	\N
-57	psch49@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$XWvNmXOOEWIMAYCQ8h4j5A$SBcOp+eLK8k9kgTzyBEi2AVHjB4/773aPFL89Ox+rrI	25	2026-04-22 13:13:42.802029	\N
-58	psch50@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$kvJ+j7GWslZqLSWEEIIwJg$lunXp+JUBhoGpGg8btTpQCMc7BfOl06fhIgnWri2vv8	26	2026-04-22 13:13:42.802029	\N
-59	psch58@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$LIXQGiOEcC6lVKq1ttaa8w$sIDYEp3w0tdL3QeuavBoIVWJst0gRbZpcT5fO1rb+2g	27	2026-04-22 13:13:42.802029	\N
-60	psch37@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$w7i39t77fy+lFAIg5PyfUw$P9tZruKhjkks7EXLAtZnCup9s2BMx98g4YQjSqNzi0w	28	2026-04-22 13:13:42.802029	\N
-61	comgz@comgz.zakon.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$zNk7p9R6bw2BMOa813qv9Q$1cQEseTg+8onlFEYHZVehkgIrY7O2Gcin0+cM4d8Wrs	29	2026-04-22 13:13:42.802029	\N
-62	tc@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$7N3b23uP0RpDyLmX0joH4A$28Hz13Kfn3tv4DL9i/T9tHvoFWtDAogiZnsQtYuaC9c	30	2026-04-22 13:13:42.802029	\N
-63	spb_umc@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$uLf2XmsNAaD0Psc4R2ittQ$Pl2YEWqTluKwopZJhZ9x4w/M/bhZ3IIy3SQXtD0BrmY	31	2026-04-22 13:13:42.802029	\N
-64	disp_pss@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$tbZWas0ZwxiDsNYaIyQkxA$RWZHSePxPiYx2/GCirrJ7f7DJOS0UBpikH+MB7jCB7c	32	2026-04-22 13:13:42.802029	\N
+COPY public.users (id, email, password_hash, department_id, created_at, updated_at, admin) FROM stdin;
+66	test@mail.ru	$argon2id$v=19$m=1024,t=2,p=2$8v7f29tby3kPQagV4hyDcA$GvoyV8xM6W4kIcHxmisw2x4Y17TQ4UCJZVlbtlvuDIw	33	2026-04-28 12:41:23.954174	2026-04-28 12:47:22.008491	t
+33	admiral_pso@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$qtW6NwaAcC4FYOyds7YWAg$3RKdxsDtVca+eTyDoh/8vicEvg7aInqUoWK9Dvef070	1	2026-04-22 13:13:42.802029	\N	f
+34	vasileostrov_pso@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$SclZC0GIca4VYmyN0XqPcQ$wARrPyOwycnHWSym53EUHKwEEiH+jiLY5jib6Sj/Dkc	2	2026-04-22 13:13:42.802029	\N	f
+35	psch21@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$U0ppjdFaq3VuDWEshVAKQQ$4NkvQE1rILEXr2Pzkw/Oc1KwFva3V9UI3xmnXX5cS6I	3	2026-04-22 13:13:42.802029	\N	f
+36	psch60@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$i/H+v/d+L4VwLkUIgVAKwQ$IS2Achn5+oOx4N3+M8uol5uPsKn7uelOtx5lsN/d8KA	4	2026-04-22 13:13:42.802029	\N	f
+37	psch63@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$fS/FGEPoPeecs5ayVqrVmg$rJk5pfz9J/FbA64/LOC1BK0sbq5vZ+se3xJXefuZBso	5	2026-04-22 13:13:42.802029	\N	f
+38	psch67@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$EWKMsZaSslYqJaQ05hzjXA$hpV7tkpV40lTba/T8F1A3eYJ4xG5jB73AKVx3OO8iDY	6	2026-04-22 13:13:42.802029	\N	f
+39	psch75@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$Q4gxptSak7IWAkAoxbi39g$m3/5L8IxNjcEWgAWLYBSLBtYSUlgBo0xkQpiRU4jEHU	7	2026-04-22 13:13:42.802029	\N	f
+40	psch42@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$0/rfm1NqLUWIESLEGGPMOQ$SaF6ID2tlc1bTgyhmOoyQ2+nNMBEoCSozy6Dv/oDEsk	8	2026-04-22 13:13:42.802029	\N	f
+41	psch48@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$yHkPwZhTqrUW4ryX0hqDUA$2eI0JzuboQEBdRzAut9jvrvC1jhcHtP1djgeKj0Xmss	9	2026-04-22 13:13:42.802029	\N	f
+42	krgvardia_pso@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$2BvDGGMMIeRcS2kNoVTKGQ$9V2JBqXc/1+GVNycRr2c/mgt8mFkOodP9nkJWzlIn+I	10	2026-04-22 13:13:42.802029	\N	f
+43	psch20@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$31tLSSmFsDbGOGdsTen9/w$A3nkinYdrwCJmkDsU+d7ATBz3dIzne+qAhGiD8mJUYw	11	2026-04-22 13:13:42.802029	\N	f
+44	psch33@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$es8Zg1BqjTFmTEmJkTLm/A$Umd9WQZvFmA1NXQwZIeQAMN1bNyZ+Ovzmkxiumx/6Gg	12	2026-04-22 13:13:42.802029	\N	f
+45	psch47@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$kxKiVEqJca71HgOAsFaKUQ$1tA750vPmqfK1H1IXq+Z80rUTEqJjTPx8XYPmUG1Q6s	13	2026-04-22 13:13:42.802029	\N	f
+46	psch57@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$n3Pu/Z/z/h+DMGZsTekdYw$md3iXhd0r6e8GXQIUXIGXMR+JmXFrnCLbdtW7ndRKd0	14	2026-04-22 13:13:42.802029	\N	f
+47	psch43@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$hBCCEIKQsvYeI2RsrfUegw$Cby49V+mQmq5FY4qoDuI6E038rmbWf62f/5fgcVPBLs	15	2026-04-22 13:13:42.802029	\N	f
+48	psch39@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$RohxTglhzFnrHWMMgTDm/A$PQuVsnQ8NH1V7rkUgyMkRlH1CJ1nB8s3/GWqAYpQe5g	16	2026-04-22 13:13:42.802029	\N	f
+49	psch52@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$hvDeW4vx3huDUGpN6Z2Tsg$yMgWO9j8y6gYAxlR2+Nh5YfWtPOhfvIK/YGlsfVAYqk	17	2026-04-22 13:13:42.802029	\N	f
+50	psch61@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$Sill7J3zfi+lNGasFYIQIg$7qQnfZxbWdC/3kZpyqzGxXZoB8qFlNtF03F9dqCX+4M	18	2026-04-22 13:13:42.802029	\N	f
+51	petrograd_pso@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$WctZa20tJQQgJGRsjdE6Bw$8cEA540Xw1485T4YW3SLCB+6sMdAqppkKqezolBTx8k	19	2026-04-22 13:13:42.802029	\N	f
+52	psch54@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$Ywxh7P2/N+Zc6733vnfufQ$FOtsjQC5FTavoOmjb/e1ZjcJ9ze1GRMGGuCKliALi2k	20	2026-04-22 13:13:42.802029	\N	f
+53	psch53@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$qpVyLmWsNcbYO0dICSEkRA$ZiV+W7lvC5ZPzlIqFThgv75GBI8dP1Vul68DTE1pJJA	21	2026-04-22 13:13:42.802029	\N	f
+54	psch59@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$E8IYA+CcEwJgDCEEAECIkQ$P6oP2Ia1X6xkdns+UAQSOgY5gP860eUsrDFJpnnfkzc	22	2026-04-22 13:13:42.802029	\N	f
+55	psch76@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$QciZU4pR6t0bY+xdizEmRA$ixwjyxW+OAim2ezMR3s76nyle6N5aY/QbQ126+z0kWM	23	2026-04-22 13:13:42.802029	\N	f
+56	psch23@gocchs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$d44RghBCyPm/l5LSOse4Nw$av3of6HCngw7fEalTv8peCkbLaFHINDcMHPuTbmP5Xs	24	2026-04-22 13:13:42.802029	\N	f
+57	psch49@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$XWvNmXOOEWIMAYCQ8h4j5A$SBcOp+eLK8k9kgTzyBEi2AVHjB4/773aPFL89Ox+rrI	25	2026-04-22 13:13:42.802029	\N	f
+58	psch50@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$kvJ+j7GWslZqLSWEEIIwJg$lunXp+JUBhoGpGg8btTpQCMc7BfOl06fhIgnWri2vv8	26	2026-04-22 13:13:42.802029	\N	f
+59	psch58@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$LIXQGiOEcC6lVKq1ttaa8w$sIDYEp3w0tdL3QeuavBoIVWJst0gRbZpcT5fO1rb+2g	27	2026-04-22 13:13:42.802029	\N	f
+60	psch37@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$w7i39t77fy+lFAIg5PyfUw$P9tZruKhjkks7EXLAtZnCup9s2BMx98g4YQjSqNzi0w	28	2026-04-22 13:13:42.802029	\N	f
+61	comgz@comgz.zakon.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$zNk7p9R6bw2BMOa813qv9Q$1cQEseTg+8onlFEYHZVehkgIrY7O2Gcin0+cM4d8Wrs	29	2026-04-22 13:13:42.802029	\N	f
+62	tc@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$7N3b23uP0RpDyLmX0joH4A$28Hz13Kfn3tv4DL9i/T9tHvoFWtDAogiZnsQtYuaC9c	30	2026-04-22 13:13:42.802029	\N	f
+63	spb_umc@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$uLf2XmsNAaD0Psc4R2ittQ$Pl2YEWqTluKwopZJhZ9x4w/M/bhZ3IIy3SQXtD0BrmY	31	2026-04-22 13:13:42.802029	\N	f
+64	disp_pss@gochs.gov.spb.ru	$argon2id$v=19$m=1024,t=2,p=2$tbZWas0ZwxiDsNYaIyQkxA$RWZHSePxPiYx2/GCirrJ7f7DJOS0UBpikH+MB7jCB7c	32	2026-04-22 13:13:42.802029	\N	f
 \.
 
 
@@ -865,7 +928,7 @@ COPY public.users (id, email, password_hash, department_id, created_at, updated_
 -- Name: departments_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
 --
 
-SELECT pg_catalog.setval('public.departments_id_seq', 32, true);
+SELECT pg_catalog.setval('public.departments_id_seq', 33, true);
 
 
 --
@@ -879,7 +942,14 @@ SELECT pg_catalog.setval('public.machineries_id_seq', 403, true);
 -- Name: maintenance_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
 --
 
-SELECT pg_catalog.setval('public.maintenance_id_seq', 1, true);
+SELECT pg_catalog.setval('public.maintenance_id_seq', 8, true);
+
+
+--
+-- Name: reports_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.reports_id_seq', 22, true);
 
 
 --
@@ -893,7 +963,7 @@ SELECT pg_catalog.setval('public.sections_id_seq', 69, true);
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 64, true);
+SELECT pg_catalog.setval('public.users_id_seq', 66, true);
 
 
 --
@@ -937,11 +1007,27 @@ ALTER TABLE ONLY public.maintenance
 
 
 --
+-- Name: reports reports_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.reports
+    ADD CONSTRAINT reports_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: sections sections_pkey; Type: CONSTRAINT; Schema: public; Owner: test
 --
 
 ALTER TABLE ONLY public.sections
     ADD CONSTRAINT sections_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: reports uq_report_date_section; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.reports
+    ADD CONSTRAINT uq_report_date_section UNIQUE (date, section_id);
 
 
 --
@@ -989,6 +1075,20 @@ CREATE INDEX ix_maintenance_date ON public.maintenance USING btree (date);
 
 
 --
+-- Name: ix_reports_date; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX ix_reports_date ON public.reports USING btree (date);
+
+
+--
+-- Name: ix_reports_section_id; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX ix_reports_section_id ON public.reports USING btree (section_id);
+
+
+--
 -- Name: ix_sections_department_id; Type: INDEX; Schema: public; Owner: test
 --
 
@@ -1019,6 +1119,14 @@ ALTER TABLE ONLY public.maintenance
 
 
 --
+-- Name: reports reports_section_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.reports
+    ADD CONSTRAINT reports_section_id_fkey FOREIGN KEY (section_id) REFERENCES public.sections(id);
+
+
+--
 -- Name: sections sections_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: test
 --
 
@@ -1038,5 +1146,5 @@ ALTER TABLE ONLY public.users
 -- PostgreSQL database dump complete
 --
 
-\unrestrict yKVjGw4flqDrSBWZx9qTChOT1xM8zY3LrQOtbsCDJVCaSrQa5wBMX5xbJqVnY5E
+\unrestrict geRe2Mf63vfvfC5qm2wbMr4tfQk0MgjaAzrcpfB3aDPlcofkpd6iwezIuLaleFT
 

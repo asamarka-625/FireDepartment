@@ -38,7 +38,7 @@ async def lifespan(app: FastAPI):
     await shutdown()
 
 
-app = FastAPI(lifespan=lifespan, docs_url="/api/docs")
+app = FastAPI(lifespan=lifespan, docs_url="/api/docs", root_path="/72tldh")
 
 # Подключение маршрутов
 app.include_router(router)

@@ -3,10 +3,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.web
-      # network: host
-      # args:
-      #  - http_proxy=http://127.0.0.1:10808
-      #  - https_proxy=http://127.0.0.1:10808
+      network: host
+      args:
+       - http_proxy=http://127.0.0.1:10808
+       - https_proxy=http://127.0.0.1:10808
     depends_on:
       db:
         condition: service_healthy

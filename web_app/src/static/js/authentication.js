@@ -7,13 +7,17 @@ form.addEventListener('submit', async function (e) {
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
 
+    // сброс состояния
+    message.classList.remove("error", "success");
+    message.textContent = "";
+
     try {
-        const response = await fetch('/api/v1/auth/login', {
+        const response = await fetch('/72tldh/api/v1/auth/login', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
             },
-            credentials: 'include', // важно для cookie refresh_token
+            credentials: 'include',
             body: new URLSearchParams({
                 username: username,
                 password: password
@@ -26,22 +30,21 @@ form.addEventListener('submit', async function (e) {
 
         const data = await response.json();
 
-        // Сохраняем access_token (например, в памяти или localStorage)
+        // сохраняем токены
         localStorage.setItem('access_token', data.access_token);
-
-        // CSRF токен тоже пригодится
         localStorage.setItem('csrf_token', data.csrf_token);
 
-        message.style.color = "lightgreen";
+        // ✅ успех
+        message.classList.add("success");
         message.textContent = "Успешный вход";
 
-        // переход дальше
         setTimeout(() => {
-            window.location.href = "/";
+            window.location.href = "/72tldh/";
         }, 500);
 
     } catch (error) {
-        message.style.color = "red";
+        // ❌ ошибка
+        message.classList.add("error");
         message.textContent = "Неверный логин или пароль";
     }
 });

@@ -61,9 +61,14 @@ class Section(Base):
         back_populates="section",
         cascade="all, delete-orphan"
     )
+    reports: so.Mapped[List["Report"]] = so.relationship(
+        "Report",
+        back_populates="section",
+        cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
-        return f"<Department(id={self.id}, title={self.title})>"
+        return f"<Section(id={self.id}, title={self.title})>"
 
     def __str__(self):
         return self.title

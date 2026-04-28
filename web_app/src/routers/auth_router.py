@@ -109,4 +109,4 @@ async def logout(
 
     response.delete_cookie(key="refresh_token", path="/")
 
-    return {"message": "Logout successful", "redirect": "/login"}
+    return {"message": "Logout successful", "redirect": "/72tldh/login"}

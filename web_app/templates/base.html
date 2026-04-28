@@ -9,21 +9,26 @@
 
 <div class="layout">
     <aside class="sidebar">
-        <div class="structure">
-            <p class="structure-title">{{ department }}</p>
-            {% for section in sections %}
-                <div class="department">
-                    <button type="button" class="accordion">
-                        {{ section.title }}
-                    </button>
+        <div class="sidebar-header">
+            <button id="logoutBtn" class="logout-btn">Выйти</button>
+        </div>
+        <div class="sidebar-content">
+            <div class="structure">
+                <p class="structure-title">{{ department }}</p>
 
-                    <div class="panel">
-                        <a href="/72tldh/equipment/{{ section.id }}">Сведения о технике</a>
-                        <a href="/72tldh/create/{{ section.id }}">Создать строевую записку</a>
-                        <a href="/72tldh/history/{{ section.id }}">История записок</a>
+                {% for section in sections %}
+                    <div class="department">
+                        <button type="button" class="accordion">
+                            {{ section.title }}
+                        </button>
+
+                        <div class="panel">
+                            <a href="/72tldh/equipment/{{ section.id }}">Сведения о технике</a>
+                            <a href="/72tldh/reports/{{ section.id }}">История записок</a>
+                        </div>
                     </div>
-                </div>
-            {% endfor %}
+                {% endfor %}
+            </div>
         </div>
     </aside>
 
@@ -33,7 +38,7 @@
     </main>
 
 </div>
-
+<div id="toast-container"></div>
 <script src="/72tldh/static/js/main.js"></script>
 </body>
 </html>

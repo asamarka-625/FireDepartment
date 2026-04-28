@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Строевые записки{% endblock %}
+
+{% block content %}
+<div class="reports-page">
+    <h1>Строевые записки</h1>
+
+    <div id="reportsContainer" data-section="{{ section_id }}"></div>
+
+    <div class="reports-actions">
+        <button id="loadMoreBtn">Загрузить ещё</button>
+    </div>
+</div>
+
+<script src="/72tldh/static/js/reports.js"></script>
+{% endblock %}

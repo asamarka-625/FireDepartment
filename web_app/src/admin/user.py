@@ -1,5 +1,7 @@
 # Внешние зависимости
+from typing import Type
 from sqladmin import ModelView
+from sqladmin.forms import Form
 from wtforms import PasswordField
 from wtforms.validators import DataRequired
 # Внутренние модули
@@ -19,21 +21,23 @@ class UserAdmin(ModelView, model=User):
         User.id: "Идентификатор",
         User.email: "Электронная почта",
         User.department: "Пожарный участок",
+        User.admin: "Администратор",
         User.created_at: "Создан",
-        User.updated_at: "Последние обновление"
+        User.updated_at: "Последние обновление",
+        "password": "Пароль"
     }
 
-    form_overrides = {
-        "password": PasswordField
-    }
+    async def scaffold_form(self, form_type: str = None) -> Type[Form]:
+        form_class = await super().scaffold_form(form_type)
 
-    form_args = {
-        "password": {
-            "label": "Пароль",
-            "validators": [DataRequired()],
-            "description": "Придумайте пароль"
-        }
-    }
+        if "password" in form_type:
+            form_class.password = PasswordField(
+                label="Пароль",
+                validators=[DataRequired()],
+                description="Придумайте пароль"
+            )
+
+        return form_class
 
     async def on_model_change(self, data, model, is_created, request):
         # Хэширование пароля
@@ -52,14 +56,15 @@ class UserAdmin(ModelView, model=User):
     form_create_rules = [
         "email",
         "password",
-        "department"
+        "department",
+        "admin"
     ]
-
 
     column_details_list = [
         User.id,
         User.email,
         User.department,
+        User.admin,
         User.created_at,
         User.updated_at
     ]
@@ -67,7 +72,8 @@ class UserAdmin(ModelView, model=User):
     form_edit_rules = [
         "email",
         "password",
-        "department"
+        "department",
+        "admin"
     ]
 
     can_create = True  # право создавать

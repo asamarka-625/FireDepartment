@@ -1,6 +1,5 @@
 # Внешние зависимости
-from typing import List, Optional
-from datetime import date
+from typing import List, Tuple
 import sqlalchemy as sa
 import sqlalchemy.orm as so
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,7 +9,7 @@ from fastapi import HTTPException, status
 from web_app.src.core import cfg, connection
 from web_app.src.models import (Machinery, STATUS_MAINTENANCE_MAP, StatusMaintenance,
                                 REVERSE_STATUS_MAINTENANCE_MAP, Maintenance)
-from web_app.src.schemas import UpdateMachineryRequest
+from web_app.src.schemas import UpdateMachineryRequest, MachineryScheme
 
 
 # Получаем список машин
@@ -18,7 +17,7 @@ from web_app.src.schemas import UpdateMachineryRequest
 async def sql_get_machineries(
     section_id: int,
     session: AsyncSession,
-) -> List[Machinery]:
+) -> List[MachineryScheme]:
     try:
         machineries_result = await session.execute(
             sa.select(Machinery)
@@ -31,7 +30,7 @@ async def sql_get_machineries(
         result = []
         for machinery in machineries_result.scalars():
             machinery.status = STATUS_MAINTENANCE_MAP[machinery.status.value]
-            result.append(machinery)
+            result.append(MachineryScheme.model_validate(machinery))
 
         return result
 
@@ -41,6 +40,29 @@ async def sql_get_machineries(
 
     except Exception as e:
         cfg.logger.error(f"Unexpected error get machineries by section_id: {section_id}: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unexpected server error")
+
+
+# Получаем список ID машин
+@connection
+async def sql_get_machinery_ids(
+    section_ids: Tuple[int],
+    session: AsyncSession,
+) -> Tuple[int, ...]:
+    try:
+        machinery_ids_result = await session.execute(
+            sa.select(Machinery.id)
+            .where(Machinery.section_id.in_(section_ids))
+        )
+
+        return tuple(machinery_ids_result.scalars())
+
+    except SQLAlchemyError as e:
+        cfg.logger.error(f"Database error get machinery_ids by section_ids: {section_ids}: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database error")
+
+    except Exception as e:
+        cfg.logger.error(f"Unexpected error get machinery_ids by section_ids: {section_ids}: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unexpected server error")
 
 

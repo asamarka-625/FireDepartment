@@ -1,3 +1,4 @@
+# Внешние зависимости
 from typing import Annotated
 from pydantic import BaseModel, Field, ConfigDict
 
@@ -7,6 +8,7 @@ class UserScheme(BaseModel):
     id: Annotated[int, Field(ge=1)]
     email: Annotated[str, Field(strict=True, max_length=255)]
     department_id: Annotated[int, Field(ge=1)]
+    admin: bool = False
 
     model_config = ConfigDict(
         frozen=True,

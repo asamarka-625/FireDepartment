@@ -8,13 +8,16 @@ from web_app.src.models import Section
 class SectionAdmin(ModelView, model=Section):
     column_list = [
         Section.id,
-        Section.title
+        Section.title,
+        Section.department
     ]
 
     column_labels = {
         Section.id: "Идентификатор",
         Section.title: "Название",
+        Section.department: "Пожарный участок",
         Section.machineries: "Техника",
+        Section.reports: "Служебные записки",
         Section.created_at: "Создан",
         Section.updated_at: "Последние обновление"
     }
@@ -27,21 +30,23 @@ class SectionAdmin(ModelView, model=Section):
     column_default_sort = [(Section.id, True)]
 
     form_create_rules = [
-        "title"
+        "title",
+        "department"
     ]
 
     column_details_list = [
         Section.id,
         Section.title,
+        Section.department,
         Section.machineries,
+        Section.reports,
         Section.created_at,
         Section.updated_at
     ]
 
     form_edit_rules = [
-        "title"
-        "users",
-        "machineries"
+        "title",
+        "department"
     ]
 
     can_create = True  # право создавать

@@ -7,8 +7,8 @@ from sqladmin import Admin
 from web_app.src.core import cfg, setup_database, engine
 from web_app.src.routers import router
 from web_app.src.middlewares import AuthenticationMiddleware
-from web_app.src.admin import (DepartmentAdmin, SectionAdmin, MachineryAdmin,
-                               MaintenanceAdmin, UserAdmin, authentication_backend)
+from web_app.src.admin import (DepartmentAdmin, SectionAdmin, MachineryAdmin, MaintenanceAdmin,
+                               ReportAdmin, UserAdmin, authentication_backend)
 from web_app.src.utils import redis_service
 
 
@@ -64,8 +64,7 @@ app.add_middleware(
     max_age=600
 )
 
-
-app.add_middleware(AuthenticationMiddleware, login_url="/login")
+app.add_middleware(AuthenticationMiddleware, login_url="/72tldh/login")
 
 # Админка
 admin = Admin(app, engine, authentication_backend=authentication_backend)
@@ -73,6 +72,7 @@ admin.add_view(DepartmentAdmin)
 admin.add_view(SectionAdmin)
 admin.add_view(MachineryAdmin)
 admin.add_view(MaintenanceAdmin)
+admin.add_view(ReportAdmin)
 admin.add_view(UserAdmin)
 
 

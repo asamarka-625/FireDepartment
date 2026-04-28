@@ -16,6 +16,11 @@ class User(Base):
         nullable=False
     )
     password_hash: so.Mapped[str] = so.mapped_column(sa.String(255), nullable=False)
+    admin: so.Mapped[bool] = so.mapped_column(
+        sa.Boolean,
+        default=False,
+        nullable=False
+    )
 
     # Связи с участком
     department_id: so.Mapped[int] = so.mapped_column(

@@ -51,11 +51,11 @@ class Machinery(Base):
         sa.String(64),
         nullable=False
     )
-    model: so.Mapped[str] = so.mapped_column(
+    model: so.Mapped[Optional[str]] = so.mapped_column(
         sa.String(128),
         nullable=True
     )
-    number: so.Mapped[str] = so.mapped_column(
+    number: so.Mapped[Optional[str]] = so.mapped_column(
         sa.String(32),
         index=True,
         nullable=True
@@ -64,6 +64,26 @@ class Machinery(Base):
         sa.Enum(StatusMaintenance),
         index=True,
         nullable=False
+    )
+    operational: so.Mapped[bool] = so.mapped_column(
+        sa.Boolean,
+        nullable=False,
+        default=False
+    )
+
+    supervisor: so.Mapped[str] = so.mapped_column(
+        sa.String(128),
+        nullable=False
+    )
+    current_personnel: so.Mapped[int] = so.mapped_column(
+        sa.Integer,
+        nullable=False,
+        default=0
+    )
+    gdzs: so.Mapped[int] = so.mapped_column(
+        sa.Integer,
+        nullable=False,
+        default=0
     )
 
     # Связи с отделением

@@ -19,6 +19,25 @@ class Report(Base):
         nullable=False,
         index=True,
     )
+    total_personnel: so.Mapped[int] = so.mapped_column(
+        sa.Integer,
+        nullable=False,
+        default=0
+    )
+    personnel: so.Mapped[int] = so.mapped_column(
+        sa.Integer,
+        nullable=False,
+        default=0
+    )
+    current_personnel: so.Mapped[int] = so.mapped_column(
+        sa.Integer,
+        nullable=False,
+        default=0
+    )
+    leadership: so.Mapped[str] = so.mapped_column(
+        sa.String(512),
+        nullable=False
+    )
 
     # Связи с отделением
     section_id: so.Mapped[int] = so.mapped_column(

@@ -9,14 +9,18 @@ class ReportAdmin(ModelView, model=Report):
     column_list = [
         Report.id,
         Report.section,
-        Report.date
+        Report.date,
+        Report.leadership
     ]
 
     column_labels = {
         Report.id: "Идентификатор",
         Report.data: "Данные записки",
         Report.section: "Отделение",
+        Report.total_personnel: "Количество персонала по штату",
+        Report.personnel: "Количество персонала по списку",
         Report.date: "Дата",
+        Report.leadership: "Ответственный",
         Report.created_at: "Создан",
         Report.updated_at: "Последние обновление"
     }
@@ -33,7 +37,10 @@ class ReportAdmin(ModelView, model=Report):
         Report.id,
         Report.data,
         Report.section,
+        Report.total_personnel,
+        Report.personnel,
         Report.date,
+        Report.leadership,
         Report.created_at,
         Report.updated_at
     ]

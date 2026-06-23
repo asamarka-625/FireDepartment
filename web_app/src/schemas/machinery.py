@@ -19,9 +19,13 @@ class MaintenanceScheme(BaseModel):
 class UpdateMachineryRequest(BaseModel):
     id: Annotated[int, Field(ge=1)]
     status: Optional[
-        Literal["включено", "резерв", "резерв (лсо)","ремонт", "то-1", "то-2", "вп", "выключена"]
-    ] = None
-    maintenance: Optional[MaintenanceScheme] = None
+        Literal["включено", "резерв", "резерв (лсо)", "ремонт", "то-1", "то-2", "вп", "выключена"]
+    ]
+    operational: bool
+    supervisor: Annotated[str, Field(max_length=128)]
+    current_personnel: Annotated[int, Field(ge=0)]
+    gdzs: Annotated[int, Field(ge=0)]
+    maintenance: Optional[MaintenanceScheme]
 
     model_config = ConfigDict(
         frozen=True,
@@ -34,8 +38,12 @@ class MachineryScheme(BaseModel):
     id: Annotated[int, Field(ge=1)]
     title: Annotated[str, Field(max_length=64)]
     model: Annotated[str, Field(max_length=128)]
-    number: Annotated[str, Field(max_length=32)]
+    number: Optional[Annotated[str, Field(max_length=32)]]
     status: Annotated[str, Field(max_length=64)]
+    operational: bool
+    supervisor: Annotated[str, Field(max_length=128)]
+    current_personnel: Annotated[int, Field(ge=0)]
+    gdzs: Annotated[int, Field(ge=0)]
     maintenance: Optional[MaintenanceScheme] = None
 
     model_config = ConfigDict(

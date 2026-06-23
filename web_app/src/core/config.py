@@ -31,6 +31,9 @@ class Config(BaseSettings):
     CSRF_TOKEN_EXPIRE_MINUTES: int = Field(alias="CSRF_TOKEN_EXPIRE_MINUTES")
     SECRET_CSRF_KEY: str = Field(alias="SECRET_CSRF_KEY")
 
+    SAVE_REPORT: str =  Field(alias="SAVE_REPORT")
+    TEMPLATE_NAME: str = Field(alias="TEMPLATE_NAME")
+
     allowed_origins_env: str = Field(alias="ALLOWED_ORIGINS", default="*")
 
     LOG_LEVEL: str = Field(alias="LOG_LEVEL", default="INFO")

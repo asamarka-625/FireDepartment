@@ -10,6 +10,12 @@
 <div class="layout">
     <aside class="sidebar">
         <div class="sidebar-header">
+            {% if admin %}
+                <a href="/72tldh/reports/export" class="export-btn" id="exportReportBtn">
+                    Экспорт строевой записки
+                </a>
+            {% endif %}
+
             <button id="logoutBtn" class="logout-btn">Выйти</button>
         </div>
         <div class="sidebar-content">
@@ -39,6 +45,25 @@
 
 </div>
 <div id="toast-container"></div>
+<div id="exportModal" class="modal hidden">
+    <div class="modal-content">
+        <h3>Экспорт строевой записки</h3>
+
+        <label for="creatorInput">ФИО создателя</label>
+        <input type="text" id="creatorInput" placeholder="Введите ФИО создателя">
+
+        <!-- список подразделений без записки -->
+        <div id="missingSections" class="missing-sections hidden">
+            <p class="missing-title">Не подали строевую записку:</p>
+            <ul class="missing-list"></ul>
+        </div>
+
+        <div class="modal-actions">
+            <button id="cancelExportBtn">Отмена</button>
+            <button id="submitExportBtn" disabled>Экспортировать</button>
+        </div>
+    </div>
+</div>
 <script src="/72tldh/static/js/main.js"></script>
 </body>
 </html>

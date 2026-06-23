@@ -25,9 +25,11 @@ async def get_info_page_by_user(
     page_info["department"] = department.title
 
     if not user.admin:
+        page_info["admin"] = False
         sections = department.sections
 
     else:
+        page_info["admin"] = True
         sections = await sql_get_sections()
 
     if section_id is not None:

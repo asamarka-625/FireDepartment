@@ -52,8 +52,8 @@ class DepartmentAdmin(ModelView, model=Department):
     can_view_details = True  # право смотреть всю информацию
     can_export = True  # право экспортировать
 
-    name = "Пожарный участок"  # название
-    name_plural = "Пожарные участки"  # множественное название
+    name = "Пожарно-спасательный отряд"  # название
+    name_plural = "Пожарно-спасательные отряды"  # множественное название
     icon = "fa-solid fa-fire"  # иконка
     category = "Отделения"  # категория
     category_icon = "fa-solid fa-list"  # иконка категории

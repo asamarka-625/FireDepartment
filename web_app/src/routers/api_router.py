@@ -2,12 +2,15 @@
 from typing import Dict, Annotated, List
 from pydantic import Field
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 # Внутренние модули
 from web_app.src.dependencies import get_current_user_by_access_token, get_data_by_refresh_token, verify_csrf_token
-from web_app.src.schemas import UserScheme, UpdateMachineryRequest, ReportScheme
-from web_app.src.crud import (sql_get_department_by_id, sql_get_machinery_ids,
-                              sql_update_machinery, sql_create_report, sql_get_reports)
+from web_app.src.schemas import (UserScheme, UpdateMachineryRequest, ReportScheme, CreateReportRequestScheme,
+                                 CreateExportReportScheme)
+from web_app.src.crud import (sql_get_department_by_id, sql_get_machinery_ids, sql_update_machinery,
+                              sql_create_report, sql_get_reports, sql_get_all_reports,
+                              sql_get_miss_sections_title)
+from web_app.src.utils import creator_reports
 
 
 router = APIRouter(
@@ -58,12 +61,12 @@ async def machinery_update(
 
 
 @router.post(
-    "/reports/create/{section_id}",
+    "/reports/create",
     response_class=JSONResponse,
     summary="Создание строевой записки"
 )
 async def create_report(
-    section_id: Annotated[int, Field(ge=1)],
+    data: CreateReportRequestScheme,
     current_user: UserScheme = Depends(get_current_user_by_access_token),
     token_data: Dict[str, str] = Depends(get_data_by_refresh_token),
     csrf_user_id: str = Depends(verify_csrf_token)
@@ -78,10 +81,16 @@ async def create_report(
         department = await sql_get_department_by_id(department_id=current_user.department_id)
         section_ids = tuple(section.id for section in department.sections)
 
-        if section_id not in section_ids:
+        if data.section_id not in section_ids:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    await sql_create_report(section_id=section_id)
+    await sql_create_report(
+        section_id=data.section_id,
+        leadership=data.leadership,
+        total_personnel=data.total_personnel,
+        personnel=data.personnel,
+        current_personnel=data.current_personnel
+    )
 
     return {"status": "success"}
 
@@ -119,3 +128,52 @@ async def get_reports(
     )
 
     return reports
+
+
+@router.post(
+    "/reports/export",
+    response_class=StreamingResponse,
+    summary="Получение таблицы всех строевых записок"
+)
+async def export_reports(
+    data: CreateExportReportScheme,
+    current_user: UserScheme = Depends(get_current_user_by_access_token),
+    token_data: Dict[str, str] = Depends(get_data_by_refresh_token),
+    csrf_user_id: str = Depends(verify_csrf_token)
+):
+    await user_rights_validation(
+        user=current_user,
+        token_data=token_data,
+        csrf_user_id=csrf_user_id
+    )
+
+    if not current_user.admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+
+    reports, section_ids = await sql_get_all_reports()
+    miss_sections = await sql_get_miss_sections_title(
+        section_ids=section_ids
+    )
+
+    if miss_sections:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=miss_sections
+        )
+
+    buffer = creator_reports.run(
+        reports=reports,
+        creator=data.creator
+    )
+
+    headers = {
+        "Content-Disposition": (
+            f"attachment"
+        )
+    }
+
+    return StreamingResponse(
+        buffer,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers=headers,
+    )

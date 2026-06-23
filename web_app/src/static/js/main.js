@@ -78,6 +78,28 @@ function showToast(message, type = "info", duration = 3000) {
     }, duration);
 }
 
+function showMissingSections(sections) {
+    const box = document.getElementById("missingSections");
+    const list = box.querySelector(".missing-list");
+
+    list.innerHTML = "";
+
+    if (!sections.length) {
+        // detail пустой — показываем общий тост
+        box.classList.add("hidden");
+        showToast("Не все подразделения подали записку", "error");
+        return;
+    }
+
+    sections.forEach(title => {
+        const li = document.createElement("li");
+        li.textContent = title;   // textContent, не innerHTML — без XSS
+        list.appendChild(li);
+    });
+
+    box.classList.remove("hidden");
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     const logoutBtn = document.getElementById("logoutBtn");
 
@@ -95,4 +117,90 @@ document.addEventListener("DOMContentLoaded", () => {
                 panel.style.display === "block" ? "none" : "block";
         });
     });
+
+    const exportBtn = document.getElementById("exportReportBtn");
+    const exportModal = document.getElementById("exportModal");
+    const creatorInput = document.getElementById("creatorInput");
+    const cancelExportBtn = document.getElementById("cancelExportBtn");
+    const submitExportBtn = document.getElementById("submitExportBtn");
+
+    if (exportBtn && exportModal) {
+        // открыть модалку
+        exportBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            creatorInput.value = "";
+            submitExportBtn.disabled = true;
+
+            document.getElementById("missingSections").classList.add("hidden"); // сброс
+
+            exportModal.classList.remove("hidden");
+        });
+
+        // включать кнопку только если поле заполнено
+        creatorInput.addEventListener("input", () => {
+            submitExportBtn.disabled = creatorInput.value.trim() === "";
+        });
+
+        // закрыть модалку
+        cancelExportBtn.addEventListener("click", () => {
+            exportModal.classList.add("hidden");
+        });
+
+        // отправка
+        submitExportBtn.addEventListener("click", async () => {
+            const creator = creatorInput.value.trim();
+            if (!creator) return;
+
+            submitExportBtn.disabled = true;
+
+            try {
+                const response = await apiRequest("/api/v1/reports/export", {
+                    method: "POST",
+                    body: JSON.stringify({ creator: creator })
+                });
+
+                if (!response.ok) {
+                    if (response.status === 400) {
+                        // detail приходит строкой с подразделениями через \n
+                        const data = await response.json();
+                        const sections = Array.isArray(data.detail)
+                            ? data.detail
+                            : String(data.detail || "").split("\n").map(s => s.trim()).filter(Boolean);
+                        showMissingSections(sections);
+                    } else {
+                        showToast("Ошибка экспорта", "error");
+                    }
+
+                    submitExportBtn.disabled = false;
+                    return;
+                }
+
+                // успех — скачивание
+                const now = new Date();
+                const dd = String(now.getDate()).padStart(2, "0");
+                const mm = String(now.getMonth() + 1).padStart(2, "0");
+                const yyyy = now.getFullYear();
+                const dateStr = `${dd}.${mm}.${yyyy}`;
+
+                const filename = `Строевая записка ${dateStr}.xlsx`;
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                exportModal.classList.add("hidden");
+                showToast("Записка экспортирована", "success");
+
+            } catch (err) {
+                console.error(err);
+                showToast("Ошибка соединения", "error");
+                submitExportBtn.disabled = false;
+            }
+        });
+    }
 });

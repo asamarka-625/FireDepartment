@@ -55,8 +55,8 @@ class SectionAdmin(ModelView, model=Section):
     can_view_details = True  # право смотреть всю информацию
     can_export = True  # право экспортировать
 
-    name = "Пожарное отделение участка"  # название
-    name_plural = "Пожарные отделения участков"  # множественное название
+    name = "Пожарно-спасательное подразделение"  # название
+    name_plural = "Пожарно-спасательные подразделения"  # множественное название
     icon = "fa-solid fa-fire"  # иконка
     category = "Отделения"  # категория
     category_icon = "fa-solid fa-list"  # иконка категории

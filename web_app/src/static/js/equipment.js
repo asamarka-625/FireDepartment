@@ -32,10 +32,15 @@ document.querySelectorAll("tr[data-id]").forEach(row => {
     // сохранение
     saveBtn.addEventListener("click", async () => {
         const id = row.dataset.id;
-
         const status = row.querySelector(".status-select").value;
         const note = row.querySelector(".maintenance-note").value;
         const date = row.querySelector(".maintenance-date").value;
+
+        const operational = row.querySelector(".operational-input").value === "true";
+
+        const supervisor = row.querySelector(".supervisor-input").value;
+        const currentPersonnel = Number(row.querySelector(".current-personnel-input").value);
+        const gdzs = Number(row.querySelector(".gdzs-input").value);
 
         if (date && !note) {
             showToast("Дата не может быть указана без причины", "error");
@@ -49,11 +54,13 @@ document.querySelectorAll("tr[data-id]").forEach(row => {
 
         const payload = {
             id: Number(id),
+            operational: operational,
+            supervisor: supervisor,
+            current_personnel: currentPersonnel,
+            gdzs: gdzs,
             status: status.toLowerCase(),
-            maintenance: note && date ? {
-                note: note,
-                date: date
-            } : null
+
+            maintenance: note && date ? { note: note, date: date } : null
         };
 
         try {
@@ -63,20 +70,22 @@ document.querySelectorAll("tr[data-id]").forEach(row => {
             });
 
             if (response.ok) {
-                // обновляем отображение
+                row.querySelector(".operational-text").textContent =
+                    operational ? "Да" : "Нет";
+                row.querySelector(".supervisor-text").textContent = supervisor;
+                row.querySelector(".current-personnel-text").textContent = currentPersonnel;
+                row.querySelector(".gdzs-text").textContent = gdzs;
                 row.querySelector(".status-text").textContent = status;
 
-                const viewBlock = row.querySelector("td:nth-child(6) .view");
+                const viewBlock = row.querySelector(".maintenance");
                 if (payload.maintenance) {
                     viewBlock.innerHTML = `
                         <div>${payload.maintenance.note}</div>
                         <div>${payload.maintenance.date}</div>
                     `;
-                } else {
-                    viewBlock.innerHTML = `<span class="no-maintenance">Нет</span>`;
                 }
 
-                cancelBtn.click(); // выйти из режима редактирования
+                cancelBtn.click();
             } else {
                 alert("Ошибка сохранения");
             }
@@ -85,37 +94,96 @@ document.querySelectorAll("tr[data-id]").forEach(row => {
             alert("Ошибка");
         }
     });
+});   // <-- цикл по строкам ЗАКРЫВАЕТСЯ здесь
 
-    const createBtn = document.getElementById("createReportBtn");
-    const sectionId = createBtn.dataset.section;
 
-    createBtn.addEventListener("click", async () => {
-        if (createBtn.disabled) return;
+// ===== Логика модалки — навешивается ОДИН раз, вне цикла =====
+const createBtn       = document.getElementById("createReportBtn");
+const reportModal     = document.getElementById("reportModal");
+const leadershipInput = document.getElementById("leadershipInput");
+const cancelReportBtn = document.getElementById("cancelReportBtn");
+const submitReportBtn = document.getElementById("submitReportBtn");
+const sectionId       = createBtn.dataset.section;
 
-        createBtn.disabled = true;
-        createBtn.textContent = "Создание...";
+const staffInput   = document.getElementById("personnelStaffInput");
+const listInput    = document.getElementById("personnelListInput");
+const presentInput = document.getElementById("personnelPresentInput");
 
-        try {
-            const response = await apiRequest(`/api/v1/reports/create/${sectionId}`, {
-                method: "POST"
-            });
+// число >= 0 и не пустое
+const isValidCount = (v) =>
+    v.trim() !== "" && Number.isFinite(Number(v)) && Number(v) >= 0;
 
-            if (response.ok) {
-                createBtn.textContent = "✔ Записка создана";
-                showToast("Записка успешно создана", "success");
-            }
-            else {
-                showToast("Ошибка при создании записки", "error");
-                createBtn.disabled = false;
-                createBtn.textContent = "Создать строевую записку";
-            }
+function validateReportForm() {
+    const ok =
+        leadershipInput.value.trim() !== "" &&
+        isValidCount(staffInput.value) &&
+        isValidCount(listInput.value) &&
+        isValidCount(presentInput.value);
 
-        } catch (e) {
-            console.error(e);
-            showToast("Ошибка соединения", "error");
+    submitReportBtn.disabled = !ok;
+}
 
-            createBtn.disabled = false;
-            createBtn.textContent = "Создать строевую записку";
+// открыть modal — сброс всех полей
+createBtn.addEventListener("click", () => {
+    leadershipInput.value = "";
+    staffInput.value   = "";
+    listInput.value    = "";
+    presentInput.value = "";
+    submitReportBtn.disabled = true;
+    reportModal.classList.remove("hidden");
+});
+
+// единая валидация на изменение любого поля
+[leadershipInput, staffInput, listInput, presentInput]
+    .forEach(el => el.addEventListener("input", validateReportForm));
+
+// закрыть modal
+cancelReportBtn.addEventListener("click", () => {
+    reportModal.classList.add("hidden");
+});
+
+// отправка
+submitReportBtn.addEventListener("click", async () => {
+    const leadership = leadershipInput.value.trim();
+
+    const personnelStaff   = Number(staffInput.value);
+    const personnelList    = Number(listInput.value);
+    const personnelPresent = Number(presentInput.value);
+
+    // защита от ручного ввода минуса / пустых значений
+    if (!leadership ||
+        ![personnelStaff, personnelList, personnelPresent]
+            .every(n => Number.isFinite(n) && n >= 0)) {
+        showToast("Заполните все поля корректными числами (не меньше 0)", "error");
+        return;
+    }
+
+    submitReportBtn.disabled = true;
+
+    try {
+        const response = await apiRequest("/api/v1/reports/create", {
+            method: "POST",
+            body: JSON.stringify({
+                section_id: Number(sectionId),
+                leadership: leadership,
+                total_personnel: personnelStaff,     // по штату
+                personnel: personnelList,       // по списку
+                current_personnel: personnelPresent  // на лицо
+            })
+        });
+
+        if (response.ok) {
+            reportModal.classList.add("hidden");
+            createBtn.textContent = "✔ Записка создана";
+            createBtn.disabled = true;
+            showToast("Записка успешно создана", "success");
+        } else {
+            submitReportBtn.disabled = false;
+            showToast("Ошибка при создании записки", "error");
         }
-    });
+    } catch (e) {
+        console.error(e);
+        submitReportBtn.disabled = false;
+        showToast("Ошибка соединения", "error");
+    }
 });

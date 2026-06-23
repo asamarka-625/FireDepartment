@@ -73,27 +73,41 @@ async def sql_update_machinery(
     session: AsyncSession,
 ) -> None:
     try:
-        machinery_result = await session.execute(
-            sa.select(Machinery)
+        machinery_id_result = await session.execute(
+            sa.update(Machinery)
             .where(Machinery.id == update.id)
-            .options(
-                so.joinedload(Machinery.maintenance)
+            .values(
+                status=REVERSE_STATUS_MAINTENANCE_MAP.get(update.status, StatusMaintenance.OFF),
+                operational=update.operational,
+                supervisor=update.supervisor,
+                current_personnel=update.current_personnel,
+                gdzs=update.gdzs
             )
+            .returning(Machinery.id)
         )
-        machinery = machinery_result.scalar_one()
+        machinery_id = machinery_id_result.scalar_one()
 
-        if update.status is not None:
-            machinery.status = REVERSE_STATUS_MAINTENANCE_MAP.get(update.status, StatusMaintenance.OFF)
-
-        if update.maintenance is not None:
-            if machinery.maintenance:
-                await session.delete(machinery.maintenance)
-                await session.flush()
-
-            machinery.maintenance = Maintenance(
-                note=update.maintenance.note,
-                date=update.maintenance.date
+        if update.maintenance:
+            maintenance_id_result = await session.execute(
+                sa.update(Maintenance)
+                .where(Maintenance.machinery_id == machinery_id)
+                .values(
+                    note=update.maintenance.note,
+                    date=update.maintenance.date
+                )
+                .returning(Maintenance.id)
             )
+
+            maintenance_id = maintenance_id_result.scalar_one_or_none()
+
+            if maintenance_id is None:
+                maintenance = Maintenance(
+                    machinery_id=machinery_id,
+                    note=update.maintenance.note,
+                    date=update.maintenance.date
+                )
+
+                session.add(maintenance)
 
         await session.commit()
 

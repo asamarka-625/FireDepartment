@@ -75,11 +75,42 @@ function createReportCard(report) {
                 <td>${m.title}</td>
                 <td>${m.model || "-"}</td>
                 <td>${m.number || "-"}</td>
+                <td>${m.operational ? "Да" : "Нет"}</td>
+                <td>${m.supervisor || "-"}</td>
+                <td>${m.current_personnel ?? 0}</td>
+                <td>${m.gdzs ?? 0}</td>
                 <td>${m.status}</td>
                 <td>${maintenance}</td>
             </tr>
         `;
     }).join("");
+
+    // ---- сводка по записке (личный состав уровня подразделения) ----
+    const staff   = report.total_personnel ?? 0;  // по штату
+    const list    = report.personnel ?? 0;  // по списку
+    const present = report.current_personnel ?? 0;  // на лицо
+    const absent  = Math.max(list - present, 0);    // отсутствует
+
+    const summaryBlock = `
+        <div class="report-summary">
+            <div class="summary-item">
+                <span class="summary-label">По штату</span>
+                <span class="summary-value">${staff}</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">По списку</span>
+                <span class="summary-value">${list}</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">На лицо</span>
+                <span class="summary-value">${present}</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Отсутствует</span>
+                <span class="summary-value">${absent}</span>
+            </div>
+        </div>
+    `;
 
     card.innerHTML = `
         <div class="report-header clickable">
@@ -89,12 +120,21 @@ function createReportCard(report) {
             </div>
 
             <div class="report-right">
-                <div class="report-date">${report.date}</div>
+                <div class="report-leadership">
+                    Ответственный: ${report.leadership || "-"}
+                </div>
+
+                <div class="report-date">
+                    ${report.date}
+                </div>
+
                 <div class="arrow">▼</div>
             </div>
         </div>
 
         <div class="report-body hidden">
+            ${summaryBlock}
+
             <div class="report-table-wrapper">
                 <table class="report-table">
                     <thead>
@@ -102,6 +142,10 @@ function createReportCard(report) {
                             <th>Название</th>
                             <th>Модель</th>
                             <th>Номер</th>
+                            <th>Оперативная</th>
+                            <th>Старший</th>
+                            <th>Личный состав</th>
+                            <th>ГДЗС</th>
                             <th>Статус</th>
                             <th>Обслуживание</th>
                         </tr>
@@ -116,7 +160,6 @@ function createReportCard(report) {
 
     const header = card.querySelector(".report-header");
     const body = card.querySelector(".report-body");
-    const arrow = card.querySelector(".arrow");
 
     header.addEventListener("click", () => {
         const isOpen = !body.classList.contains("hidden");

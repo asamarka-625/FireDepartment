@@ -115,7 +115,7 @@ class ReportExelCreator:
             ("D", "D", report.total_personnel, False),    # По штату
             ("E", "E", report.personnel, False),          # По списку
             ("F", "F", report.current_personnel, False),  # На лицо
-            ("G", "G", inactive_percent, False),          # Отсутствуют
+            ("G", "G", f"{inactive_percent}%", False),    # Отсутствуют
             ("M", "M", active_personal_machines, False),  # Всего
             ("N", "O", operational_value, False),         # Оперативная машина (общая)
             ("P", "Q", report.leadership, False),         # Руководство караула

@@ -151,7 +151,8 @@ async def sql_get_all_reports(
                 total_personnel=report.total_personnel,
                 personnel=report.personnel,
                 current_personnel=report.current_personnel,
-                leadership=report.leadership
+                leadership=report.leadership,
+                operational_machinery=report.operational_machinery
             ))
 
         return result, section_ids

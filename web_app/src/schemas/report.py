@@ -16,6 +16,7 @@ class ReportScheme(BaseModel):
     personnel: Annotated[int, Field(ge=0)]
     current_personnel: Annotated[int, Field(ge=0)]
     leadership: Annotated[str, Field(max_length=512)]
+    operational_machinery: bool = False
 
     model_config = ConfigDict(
         frozen=True,
@@ -31,6 +32,7 @@ class CreateReportRequestScheme(BaseModel):
     personnel: Annotated[int, Field(ge=0)]
     current_personnel: Annotated[int, Field(ge=0)]
     leadership: Annotated[str, Field(max_length=512)]
+    operational_machinery: bool = False
 
     model_config = ConfigDict(
         frozen=True,

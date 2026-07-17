@@ -38,6 +38,11 @@ class Report(Base):
         sa.String(512),
         nullable=False
     )
+    operational_machinery: so.Mapped[bool] = so.mapped_column(
+        sa.Boolean,
+        nullable=False,
+        default=False
+    )
 
     # Связи с отделением
     section_id: so.Mapped[int] = so.mapped_column(

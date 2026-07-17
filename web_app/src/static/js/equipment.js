@@ -36,8 +36,6 @@ document.querySelectorAll("tr[data-id]").forEach(row => {
         const note = row.querySelector(".maintenance-note").value;
         const date = row.querySelector(".maintenance-date").value;
 
-        const operational = row.querySelector(".operational-input").value === "true";
-
         const supervisor = row.querySelector(".supervisor-input").value;
         const currentPersonnel = Number(row.querySelector(".current-personnel-input").value);
         const gdzs = Number(row.querySelector(".gdzs-input").value);
@@ -47,20 +45,15 @@ document.querySelectorAll("tr[data-id]").forEach(row => {
             return;
         }
 
-        if (note && !date) {
-            showToast("Причина не может быть указана без даты", "error");
-            return;
-        }
-
-        const payload = {
+       const payload = {
             id: Number(id),
-            operational: operational,
             supervisor: supervisor,
             current_personnel: currentPersonnel,
             gdzs: gdzs,
             status: status.toLowerCase(),
 
-            maintenance: note && date ? { note: note, date: date } : null
+            // причина может быть без даты
+            maintenance: note ? { note: note, date: date || null } : null
         };
 
         try {
@@ -70,8 +63,6 @@ document.querySelectorAll("tr[data-id]").forEach(row => {
             });
 
             if (response.ok) {
-                row.querySelector(".operational-text").textContent =
-                    operational ? "Да" : "Нет";
                 row.querySelector(".supervisor-text").textContent = supervisor;
                 row.querySelector(".current-personnel-text").textContent = currentPersonnel;
                 row.querySelector(".gdzs-text").textContent = gdzs;
@@ -81,8 +72,10 @@ document.querySelectorAll("tr[data-id]").forEach(row => {
                 if (payload.maintenance) {
                     viewBlock.innerHTML = `
                         <div>${payload.maintenance.note}</div>
-                        <div>${payload.maintenance.date}</div>
+                        ${payload.maintenance.date ? `<div>${payload.maintenance.date}</div>` : ""}
                     `;
+                } else {
+                    viewBlock.innerHTML = `<span class="no-maintenance">Нет</span>`;
                 }
 
                 cancelBtn.click();
@@ -103,6 +96,7 @@ const reportModal     = document.getElementById("reportModal");
 const leadershipInput = document.getElementById("leadershipInput");
 const cancelReportBtn = document.getElementById("cancelReportBtn");
 const submitReportBtn = document.getElementById("submitReportBtn");
+const operationalMachineryInput = document.getElementById("operationalMachineryInput");
 const sectionId       = createBtn.dataset.section;
 
 const staffInput   = document.getElementById("personnelStaffInput");
@@ -130,6 +124,7 @@ createBtn.addEventListener("click", () => {
     listInput.value    = "";
     presentInput.value = "";
     submitReportBtn.disabled = true;
+    operationalMachineryInput.checked = false;
     reportModal.classList.remove("hidden");
 });
 
@@ -168,7 +163,8 @@ submitReportBtn.addEventListener("click", async () => {
                 leadership: leadership,
                 total_personnel: personnelStaff,     // по штату
                 personnel: personnelList,       // по списку
-                current_personnel: personnelPresent  // на лицо
+                current_personnel: personnelPresent,  // на лицо
+                operational_machinery: operationalMachineryInput.checked
             })
         });
 

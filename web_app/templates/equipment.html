@@ -14,12 +14,9 @@
                     <th>Название</th>
                     <th>Модель</th>
                     <th>Номер</th>
-
-                    <th>Оперативная машина</th>
                     <th>Старший на машине</th>
                     <th>Количество личного состава</th>
                     <th>ГДЗС</th>
-
                     <th>Статус</th>
                     <th>Обслуживание</th>
                     <th></th>
@@ -32,18 +29,6 @@
                     <td>{{ m.title }}</td>
                     <td>{{ m.model }}</td>
                     <td>{{ m.number }}</td>
-
-                    <!-- operational -->
-                    <<td>
-                        <span class="view operational-text">
-                            {{ "Да" if m.operational else "Нет" }}
-                        </span>
-
-                        <select class="edit hidden operational-input">
-                            <option value="true"  {% if m.operational %}selected{% endif %}>Да</option>
-                            <option value="false" {% if not m.operational %}selected{% endif %}>Нет</option>
-                        </select>
-                    </td>
 
                     <!-- supervisor -->
                     <td>
@@ -94,7 +79,11 @@
                         <div class="view maintenance">
                             {% if m.maintenance %}
                                 <div>{{ m.maintenance.note }}</div>
-                                <div>{{ m.maintenance.date }}</div>
+                                {% if m.maintenance.date %}
+                                    <div>{{ m.maintenance.date }}</div>
+                                {% else %}
+                                    <div>—</div>
+                                {% endif %}
                             {% else %}
                                 <span class="no-maintenance">Нет</span>
                             {% endif %}
@@ -134,9 +123,9 @@
     <div class="modal-content">
         <h3>Создание строевой записки</h3>
 
-        <label for="leadershipInput">Ответственный</label>
+        <label for="leadershipInput">Во главе караула</label>
         <input type="text" id="leadershipInput"
-               placeholder="Введите ФИО ответственного">
+               placeholder="Введите ФИО">
 
         <label for="personnelStaffInput">Личный состав по штату</label>
         <input type="number" id="personnelStaffInput" min="0" step="1"
@@ -149,6 +138,11 @@
         <label for="personnelPresentInput">Личный состав на лицо</label>
         <input type="number" id="personnelPresentInput" min="0" step="1"
                placeholder="На лицо">
+
+        <label class="checkbox-row">
+            <input type="checkbox" id="operationalMachineryInput">
+            Оперативная машина
+        </label>
 
         <div class="modal-actions">
             <button id="cancelReportBtn">Отмена</button>

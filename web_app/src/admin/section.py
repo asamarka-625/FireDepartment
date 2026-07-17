@@ -22,7 +22,7 @@ class SectionAdmin(ModelView, model=Section):
         Section.updated_at: "Последние обновление"
     }
 
-    column_searchable_list = [Section.id]  # список столбцов, которые можно искать
+    column_searchable_list = [Section.id, Section.title]  # список столбцов, которые можно искать
     column_sortable_list = [
         Section.id
     ]  # список столбцов, которые можно сортировать

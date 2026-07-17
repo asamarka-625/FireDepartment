@@ -20,7 +20,7 @@ class DepartmentAdmin(ModelView, model=Department):
         Department.updated_at: "Последние обновление"
     }
 
-    column_searchable_list = [Department.id]  # список столбцов, которые можно искать
+    column_searchable_list = [Department.id, Department.title]  # список столбцов, которые можно искать
     column_sortable_list = [
         Department.id
     ]  # список столбцов, которые можно сортировать

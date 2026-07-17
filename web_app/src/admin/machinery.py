@@ -21,7 +21,6 @@ class MachineryAdmin(ModelView, model=Machinery):
         Machinery.model: "Модель",
         Machinery.number: "Номер",
         Machinery.status: "Статус",
-        Machinery.operational: "Оперативная машина",
         Machinery.supervisor: "Старший на машине",
         Machinery.current_personnel: "Количество личного состава",
         Machinery.gdzs: "ГДЗС",
@@ -36,8 +35,7 @@ class MachineryAdmin(ModelView, model=Machinery):
     }
 
     column_formatters_detail = {
-        "status": lambda m, a: STATUS_MAINTENANCE_MAP[m.status.value],
-        "operational": lambda m, a: "Да" if m.operational else "Нет"
+        "status": lambda m, a: STATUS_MAINTENANCE_MAP[m.status.value]
     }
 
     column_searchable_list = [Machinery.id, Machinery.number]  # список столбцов, которые можно искать
@@ -53,7 +51,6 @@ class MachineryAdmin(ModelView, model=Machinery):
         "model",
         "number",
         "status",
-        "operational",
         "supervisor",
         "current_personnel",
         "gdzs",
@@ -66,7 +63,6 @@ class MachineryAdmin(ModelView, model=Machinery):
         Machinery.model,
         Machinery.number,
         Machinery.status,
-        Machinery.operational,
         Machinery.supervisor,
         Machinery.current_personnel,
         Machinery.gdzs,
@@ -81,7 +77,6 @@ class MachineryAdmin(ModelView, model=Machinery):
         "model",
         "number",
         "status",
-        "operational",
         "supervisor",
         "current_personnel",
         "gdzs",

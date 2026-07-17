@@ -160,42 +160,43 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
 
                 if (!response.ok) {
-                    if (response.status === 400) {
-                        // detail приходит строкой с подразделениями через \n
-                        const data = await response.json();
-                        const sections = Array.isArray(data.detail)
-                            ? data.detail
-                            : String(data.detail || "").split("\n").map(s => s.trim()).filter(Boolean);
-                        showMissingSections(sections);
-                    } else {
-                        showToast("Ошибка экспорта", "error");
-                    }
-
+                    showToast("Ошибка экспорта", "error");
                     submitExportBtn.disabled = false;
                     return;
                 }
 
-                // успех — скачивание
+                const data = await response.json();
+                const missing = Array.isArray(data.missing) ? data.missing : [];
+
+                // base64 -> Blob
+                const bytes = Uint8Array.from(atob(data.file), c => c.charCodeAt(0));
+                const blob = new Blob([bytes], {
+                    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                });
+
                 const now = new Date();
                 const dd = String(now.getDate()).padStart(2, "0");
                 const mm = String(now.getMonth() + 1).padStart(2, "0");
                 const yyyy = now.getFullYear();
                 const dateStr = `${dd}.${mm}.${yyyy}`;
-
                 const filename = `Строевая записка ${dateStr}.xlsx`;
 
-                const blob = await response.blob();
                 const url = URL.createObjectURL(blob);
-
                 const a = document.createElement("a");
                 a.href = url;
                 a.download = filename;
                 a.click();
                 URL.revokeObjectURL(url);
 
-                exportModal.classList.add("hidden");
                 showToast("Записка экспортирована", "success");
+                submitExportBtn.disabled = false;
 
+                if (missing.length) {
+                    showMissingSections(missing);          // окно оставляем открытым
+                } else {
+                    document.getElementById("missingSections").classList.add("hidden");
+                    exportModal.classList.add("hidden");
+                }
             } catch (err) {
                 console.error(err);
                 showToast("Ошибка соединения", "error");

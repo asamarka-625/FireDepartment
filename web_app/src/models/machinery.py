@@ -65,11 +65,6 @@ class Machinery(Base):
         index=True,
         nullable=False
     )
-    operational: so.Mapped[bool] = so.mapped_column(
-        sa.Boolean,
-        nullable=False,
-        default=False
-    )
 
     supervisor: so.Mapped[str] = so.mapped_column(
         sa.String(128),
@@ -121,10 +116,10 @@ class Maintenance(Base):
         sa.String(256),
         nullable=False
     )
-    date: so.Mapped[date] = so.mapped_column(
+    date: so.Mapped[Optional[date]] = so.mapped_column(
         sa.Date,
         index=True,
-        nullable=False
+        nullable=True
     )
 
     # Связь с машиной
@@ -142,4 +137,4 @@ class Maintenance(Base):
         return f"<Maintenance(id={self.id}, machinery_id={self.machinery_id})>"
 
     def __str__(self):
-        return self.date.strftime("%d.%m.%Y")
+        return self.date.strftime("%d.%m.%Y") if self.date else self.note

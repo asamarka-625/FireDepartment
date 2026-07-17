@@ -22,6 +22,7 @@ async def sql_create_report(
     total_personnel: int,
     personnel: int,
     current_personnel: int,
+    operational_machinery: bool,
     session: AsyncSession,
 ) -> None:
     try:
@@ -40,6 +41,7 @@ async def sql_create_report(
             total_personnel=total_personnel,
             personnel=personnel,
             current_personnel=current_personnel,
+            operational_machinery=operational_machinery
         )
 
         stmt = stmt.on_conflict_do_update(
@@ -50,12 +52,12 @@ async def sql_create_report(
                 total_personnel=total_personnel,
                 personnel=personnel,
                 current_personnel=current_personnel,
+                operational_machinery=operational_machinery,
                 updated_at=sa.func.now()
             )
         )
 
         await session.execute(stmt)
-
         await session.commit()
 
     except HTTPException:
@@ -88,7 +90,7 @@ async def sql_get_reports(
             .options(
                 so.joinedload(Report.section)
             )
-            .order_by(Report.id)
+            .order_by(Report.id.desc())
             .limit(reports_per_page)
         )
         reports = reports_result.scalars()
@@ -103,7 +105,8 @@ async def sql_get_reports(
                 total_personnel=report.total_personnel,
                 personnel=report.personnel,
                 current_personnel=report.current_personnel,
-                leadership=report.leadership
+                leadership=report.leadership,
+                operational_machinery=report.operational_machinery
             ))
 
         return result

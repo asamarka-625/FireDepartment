@@ -8,8 +8,9 @@ from fastapi import HTTPException, status
 # Внутренние модули
 from web_app.src.core import cfg, connection
 from web_app.src.models import (Machinery, STATUS_MAINTENANCE_MAP, StatusMaintenance,
-                                REVERSE_STATUS_MAINTENANCE_MAP, Maintenance)
+                                REVERSE_STATUS_MAINTENANCE_MAP, Maintenance, Section)
 from web_app.src.schemas import UpdateMachineryRequest, MachineryScheme
+from web_app.src.utils.sorting import sort_special_first
 
 
 # Получаем список машин
@@ -32,6 +33,7 @@ async def sql_get_machineries(
             machinery.status = STATUS_MAINTENANCE_MAP[machinery.status.value]
             result.append(MachineryScheme.model_validate(machinery))
 
+        result = sort_special_first(result, lambda m: m.title)
         return result
 
     except SQLAlchemyError as e:
@@ -78,7 +80,6 @@ async def sql_update_machinery(
             .where(Machinery.id == update.id)
             .values(
                 status=REVERSE_STATUS_MAINTENANCE_MAP.get(update.status, StatusMaintenance.OFF),
-                operational=update.operational,
                 supervisor=update.supervisor,
                 current_personnel=update.current_personnel,
                 gdzs=update.gdzs
@@ -121,4 +122,46 @@ async def sql_update_machinery(
 
     except Exception as e:
         cfg.logger.error(f"Unexpected error update machinery by machinery_id: {update.id}: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unexpected server error")
+
+
+# Получаем всю технику с обслуживанием и подразделением
+@connection
+async def sql_get_all_machineries(
+    session: AsyncSession,
+) -> List[dict]:
+    try:
+        result = await session.execute(
+            sa.select(Machinery)
+            .join(Machinery.section)
+            .options(
+                so.joinedload(Machinery.section),
+                so.joinedload(Machinery.maintenance)
+            )
+            .order_by(Section.title, Machinery.id)
+        )
+
+        machineries = []
+        for m in result.scalars():
+            machineries.append({
+                "section": m.section.title,
+                "title": m.title,
+                "model": m.model,
+                "number": m.number,
+                "status": STATUS_MAINTENANCE_MAP[m.status.value],
+                "supervisor": m.supervisor,
+                "current_personnel": m.current_personnel,
+                "gdzs": m.gdzs,
+                "maintenance_note": m.maintenance.note if m.maintenance else "",
+                "maintenance_date": m.maintenance.date if m.maintenance else None,
+            })
+
+        return machineries
+
+    except SQLAlchemyError as e:
+        cfg.logger.error(f"Database error get all machineries: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database error")
+
+    except Exception as e:
+        cfg.logger.error(f"Unexpected error get all machineries: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unexpected server error")

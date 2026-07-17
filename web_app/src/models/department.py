@@ -13,7 +13,8 @@ class Department(Base):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
     title: so.Mapped[str] = so.mapped_column(
         sa.String(128),
-        nullable=False
+        nullable=False,
+        index=True
     )
 
     # Связи
@@ -42,7 +43,8 @@ class Section(Base):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
     title: so.Mapped[str] = so.mapped_column(
         sa.String(128),
-        nullable=False
+        nullable=False,
+        index=True
     )
 
     # Связи с участком

@@ -46,7 +46,7 @@ class UserAdmin(ModelView, model=User):
 
         return await super().on_model_change(data, model, is_created, request)
 
-    column_searchable_list = [User.id]  # список столбцов, которые можно искать
+    column_searchable_list = [User.id, User.email]  # список столбцов, которые можно искать
     column_sortable_list = [
         User.id
     ]  # список столбцов, которые можно сортировать

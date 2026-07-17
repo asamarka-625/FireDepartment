@@ -1,5 +1,6 @@
 # Внешние зависимости
 from typing import Dict, Annotated, List
+import base64
 from pydantic import Field
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -9,7 +10,7 @@ from web_app.src.schemas import (UserScheme, UpdateMachineryRequest, ReportSchem
                                  CreateExportReportScheme)
 from web_app.src.crud import (sql_get_department_by_id, sql_get_machinery_ids, sql_update_machinery,
                               sql_create_report, sql_get_reports, sql_get_all_reports,
-                              sql_get_miss_sections_title)
+                              sql_get_miss_sections_title, sql_get_all_machineries)
 from web_app.src.utils import creator_reports
 
 
@@ -89,7 +90,8 @@ async def create_report(
         leadership=data.leadership,
         total_personnel=data.total_personnel,
         personnel=data.personnel,
-        current_personnel=data.current_personnel
+        current_personnel=data.current_personnel,
+        operational_machinery=data.operational_machinery
     )
 
     return {"status": "success"}
@@ -155,25 +157,17 @@ async def export_reports(
         section_ids=section_ids
     )
 
-    if miss_sections:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=miss_sections
-        )
+    machineries = await sql_get_all_machineries()
 
     buffer = creator_reports.run(
         reports=reports,
+        machineries=machineries,
         creator=data.creator
     )
 
-    headers = {
-        "Content-Disposition": (
-            f"attachment"
-        )
-    }
+    file_b64 = base64.b64encode(buffer.getvalue()).decode("ascii")
 
-    return StreamingResponse(
-        buffer,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers=headers,
-    )
+    return JSONResponse({
+        "file": file_b64,
+        "missing": miss_sections,
+    })

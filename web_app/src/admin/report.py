@@ -19,10 +19,15 @@ class ReportAdmin(ModelView, model=Report):
         Report.section: "Отделение",
         Report.total_personnel: "Количество персонала по штату",
         Report.personnel: "Количество персонала по списку",
+        Report.operational_machinery: "Оперативный автомобиль",
         Report.date: "Дата",
         Report.leadership: "Ответственный",
         Report.created_at: "Создан",
         Report.updated_at: "Последние обновление"
+    }
+
+    column_formatters_detail = {
+        "operational_machinery": lambda m, a: "Да" if m.operational_machinery else "Нет",
     }
 
     column_searchable_list = [Report.id, Report.date]  # список столбцов, которые можно искать
@@ -39,6 +44,7 @@ class ReportAdmin(ModelView, model=Report):
         Report.section,
         Report.total_personnel,
         Report.personnel,
+        Report.operational_machinery,
         Report.date,
         Report.leadership,
         Report.created_at,

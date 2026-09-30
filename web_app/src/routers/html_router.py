@@ -1,13 +1,16 @@
 # Внешние зависимости
-from typing import Annotated, Dict, Any, Optional
+from typing import Annotated, Dict, Any, Optional, List
 from fastapi import APIRouter, Request, Depends, HTTPException, status
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import Field
 # Внутренние модули
-from web_app.src.dependencies import get_current_user_by_refresh_token
-from web_app.src.crud import sql_get_sections, sql_get_department_by_id, sql_get_machineries
-from web_app.src.schemas import UserScheme
+from web_app.src.dependencies import (get_current_user_by_refresh_token, get_accessible_section_ids,
+                                      get_relocation_target_ids)
+from web_app.src.crud import (sql_get_sections, sql_get_department_by_id, sql_get_machineries,
+                              sql_get_today_report_signature)
+from web_app.src.models import MACHINERY_KIND_MAP
+from web_app.src.schemas import UserScheme, MachineryScheme
 
 
 router = APIRouter()
@@ -26,7 +29,9 @@ async def get_info_page_by_user(
 
     if not user.admin:
         page_info["admin"] = False
-        sections = department.sections
+        # ПСО-уровень видит все ПСЧ отряда, ПСЧ-уровень — только свою часть
+        accessible_ids = await get_accessible_section_ids(user)
+        sections = [section for section in department.sections if section.id in accessible_ids]
 
     else:
         page_info["admin"] = True
@@ -42,6 +47,27 @@ async def get_info_page_by_user(
     page_info["sections"] = sections
 
     return page_info
+
+
+# Баннер о рассинхроне сегодняшней записки с передислокацией (п. 3.5).
+# Возвращает None, если записка не подана или актуальна; иначе текст уведомления.
+def get_relocation_banner(
+    report_signature,
+    machineries: List[MachineryScheme]
+) -> Optional[str]:
+    if report_signature is None:
+        return None
+
+    submitted = {(machinery_id, direction) for machinery_id, direction in report_signature if direction}
+    current = {(m.id, m.relocation.direction) for m in machineries if m.relocation}
+
+    if submitted == current:
+        return None
+
+    if any(direction == "in" for _, direction in current - submitted):
+        return "Поступила передислоцированная техника. Требуется обновить строевую записку"
+
+    return "Изменилась передислокация техники. Требуется обновить строевую записку"
 
 
 # Страница аутентификации
@@ -80,11 +106,31 @@ async def equipment_page(
         section_id=section_id
     )
 
-    machineries = await sql_get_machineries(section_id=section_id)
+    # Список «моя техника сегодня» + машины, ушедшие в передислокацию (для отмены/возврата)
+    all_machineries = await sql_get_machineries(section_id=section_id, include_relocated_out=True)
+    machineries = [m for m in all_machineries if not (m.relocation and m.relocation.direction == "out")]
+    relocated_out = [m for m in all_machineries if m.relocation and m.relocation.direction == "out"]
+
+    # ПСЧ, в которые можно передислоцировать (по умолчанию — часть того же ПСО)
+    target_ids = await get_relocation_target_ids(current_user)
+    if target_ids is None:
+        candidate_sections = await sql_get_sections()
+    else:
+        department = await sql_get_department_by_id(department_id=current_user.department_id)
+        candidate_sections = [s for s in department.sections if s.id in target_ids]
+    relocation_targets = [s for s in candidate_sections if s.id != section_id]
+
+    report_signature = await sql_get_today_report_signature(section_id=section_id)
+
     context = {
         "title": "Сведения о машинах",
         "section_id": section_id,
         "machineries": machineries,
+        "relocated_out": relocated_out,
+        "relocation_targets": relocation_targets,
+        "report_submitted_today": report_signature is not None,
+        "relocation_banner": get_relocation_banner(report_signature, all_machineries),
+        "kind_map": MACHINERY_KIND_MAP,
         **page_info
     }
 

@@ -7,18 +7,6 @@ let lastSeenId = null;
 const PAGE_SIZE = 10;
 let isLoading = false;
 
-function hasAdjacentUppercase(text) {
-    if (!text) return false;
-    for (let i = 0; i < text.length - 1; i++) {
-        const a = text[i];
-        const b = text[i + 1];
-        const aUpper = a !== a.toLowerCase() && a === a.toUpperCase();
-        const bUpper = b !== b.toLowerCase() && b === b.toUpperCase();
-        if (aUpper && bUpper) return true;
-    }
-    return false;
-}
-
 async function loadReports() {
     if (isLoading) return;
     isLoading = true;
@@ -67,11 +55,8 @@ function createReportCard(report) {
     const card = document.createElement("div");
     card.className = "report-card";
 
-    const sortedMachinery = [...report.machinery].sort(
-        (a, b) =>
-            (hasAdjacentUppercase(a.title) ? 0 : 1) -
-            (hasAdjacentUppercase(b.title) ? 0 : 1)
-    );
+    // порядок уже задан сервером: специальная техника, АЦ по ходу выезда, АЛ, прочая
+    const sortedMachinery = report.machinery;
 
     const machinesRows = sortedMachinery.map(m => {
         let maintenance = "—";
@@ -90,15 +75,26 @@ function createReportCard(report) {
             `;
         }
 
+        // статус с учётом передислокации
+        let status = m.status;
+        let title = m.label || m.title;
+        if (m.relocation) {
+            if (m.relocation.direction === "out") {
+                status = `Передислокация → ${m.relocation.partner}`;
+            } else {
+                title = `${title} (из ${m.relocation.partner})`;
+            }
+        }
+
         return `
             <tr>
-                <td>${m.title}</td>
+                <td>${title}</td>
                 <td>${m.model || "-"}</td>
                 <td>${m.number || "-"}</td>
                 <td>${m.supervisor || "-"}</td>
                 <td>${m.current_personnel ?? 0}</td>
                 <td>${m.gdzs ?? 0}</td>
-                <td>${m.status}</td>
+                <td>${status}</td>
                 <td>${maintenance}</td>
             </tr>
         `;

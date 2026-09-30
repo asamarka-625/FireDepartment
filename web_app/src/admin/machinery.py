@@ -1,7 +1,11 @@
 # Внешние зависимости
+from typing import Any
+import sqlalchemy as sa
 from sqladmin import ModelView
+from starlette.requests import Request
 # Внутренние модули
-from web_app.src.models import Machinery, STATUS_MAINTENANCE_MAP
+from web_app.src.models import Machinery, STATUS_MAINTENANCE_MAP, MACHINERY_KIND_MAP
+from web_app.src.utils.machinery_rules import validate_departure_order, normalize_short_title
 
 
 # Админка для Machinery
@@ -12,6 +16,9 @@ class MachineryAdmin(ModelView, model=Machinery):
         Machinery.model,
         Machinery.number,
         Machinery.status,
+        Machinery.kind,
+        Machinery.short_title,
+        Machinery.departure_order,
         Machinery.section
     ]
 
@@ -21,6 +28,10 @@ class MachineryAdmin(ModelView, model=Machinery):
         Machinery.model: "Модель",
         Machinery.number: "Номер",
         Machinery.status: "Статус",
+        Machinery.kind: "Категория)",
+        Machinery.short_title: "Краткое обозначение",
+        Machinery.departure_order: "Ход выезда",
+        Machinery.relocations: "Передислокации",
         Machinery.supervisor: "Старший на машине",
         Machinery.current_personnel: "Количество личного состава",
         Machinery.gdzs: "ГДЗС",
@@ -31,12 +42,47 @@ class MachineryAdmin(ModelView, model=Machinery):
     }
 
     column_formatters = {
-        "status": lambda m, a: STATUS_MAINTENANCE_MAP[m.status.value]
+        "status": lambda m, a: STATUS_MAINTENANCE_MAP[m.status.value],
+        "kind": lambda m, a: MACHINERY_KIND_MAP[m.kind.value]
     }
 
     column_formatters_detail = {
-        "status": lambda m, a: STATUS_MAINTENANCE_MAP[m.status.value]
+        "status": lambda m, a: STATUS_MAINTENANCE_MAP[m.status.value],
+        "kind": lambda m, a: MACHINERY_KIND_MAP[m.kind.value]
     }
+
+    # Валидация категории и хода выезда: у АЦ ход обязателен по смыслу, но уникален в пределах ПСЧ,
+    # у остальной техники хода нет
+    async def on_model_change(self, data: dict, model: Any, is_created: bool, request: Request) -> None:
+        short_title = data.get("short_title", model.short_title if not is_created else None)
+        departure_order = data.get("departure_order", model.departure_order if not is_created else None)
+
+        if isinstance(short_title, str):
+            short_title = normalize_short_title(short_title) or None
+            data["short_title"] = short_title
+
+        section = data.get("section")
+        section_id = getattr(section, "id", section) if section is not None else getattr(model, "section_id", None)
+
+        taken_orders = set()
+        if departure_order is not None and section_id is not None:
+            stmt = sa.select(Machinery.departure_order).where(
+                Machinery.section_id == section_id,
+                Machinery.departure_order.isnot(None)
+            )
+            if not is_created:
+                stmt = stmt.where(Machinery.id != model.id)
+
+            if self.is_async:
+                async with self.session_maker(expire_on_commit=False) as session:
+                    taken_orders = set((await session.execute(stmt)).scalars())
+            else:
+                with self.session_maker(expire_on_commit=False) as session:
+                    taken_orders = set(session.execute(stmt).scalars())
+
+        error = validate_departure_order(short_title, departure_order, taken_orders)
+        if error:
+            raise ValueError(error)
 
     column_searchable_list = [Machinery.id, Machinery.number]  # список столбцов, которые можно искать
     column_sortable_list = [
@@ -51,6 +97,9 @@ class MachineryAdmin(ModelView, model=Machinery):
         "model",
         "number",
         "status",
+        "kind",
+        "short_title",
+        "departure_order",
         "supervisor",
         "current_personnel",
         "gdzs",
@@ -63,11 +112,15 @@ class MachineryAdmin(ModelView, model=Machinery):
         Machinery.model,
         Machinery.number,
         Machinery.status,
+        Machinery.kind,
+        Machinery.short_title,
+        Machinery.departure_order,
         Machinery.supervisor,
         Machinery.current_personnel,
         Machinery.gdzs,
         Machinery.section,
         Machinery.maintenance,
+        Machinery.relocations,
         Machinery.created_at,
         Machinery.updated_at
     ]
@@ -77,6 +130,9 @@ class MachineryAdmin(ModelView, model=Machinery):
         "model",
         "number",
         "status",
+        "kind",
+        "short_title",
+        "departure_order",
         "supervisor",
         "current_personnel",
         "gdzs",

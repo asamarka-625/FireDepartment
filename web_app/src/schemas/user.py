@@ -1,5 +1,5 @@
 # Внешние зависимости
-from typing import Annotated
+from typing import Annotated, Optional
 from pydantic import BaseModel, Field, ConfigDict
 
 
@@ -9,6 +9,8 @@ class UserScheme(BaseModel):
     email: Annotated[str, Field(strict=True, max_length=255)]
     department_id: Annotated[int, Field(ge=1)]
     admin: bool = False
+    # Пусто — учётная запись уровня ПСО (все ПСЧ отряда), указано — уровня ПСЧ (только своя часть)
+    section_id: Optional[int] = None
 
     model_config = ConfigDict(
         frozen=True,

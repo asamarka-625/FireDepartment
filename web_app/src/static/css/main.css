@@ -718,3 +718,55 @@ body {
     padding: 2px 0;
     word-break: break-word;  /* длинные названия переносятся, не уезжают вбок */
 }
+
+/* передислокация, баннеры */
+.banner {
+    padding: 12px 16px;
+    margin: 12px 0;
+    border-radius: 6px;
+    font-weight: bold;
+}
+
+.banner.warning {
+    background: #fff3cd;
+    color: #7a5b00;
+    border: 1px solid #ffe08a;
+}
+
+.received-row {
+    background: #f3f9ff;
+}
+
+.relocation-tag {
+    font-size: 12px;
+    color: #1976d2;
+}
+
+.relocate-btn,
+.relocation-save-btn,
+.relocation-cancel-btn {
+    margin-top: 4px;
+}
+
+.hint {
+    font-size: 13px;
+    color: #666;
+    margin: 6px 0;
+}
+
+.table-actions .create-report-btn + .create-report-btn {
+    margin-left: 10px;
+}
+
+.create-report-btn.secondary {
+    background-color: #2e7d32;
+}
+
+.create-report-btn.secondary:hover {
+    background-color: #1f5c23;
+}
+
+.modal-content select {
+    padding: 10px;
+    font-size: 16px;
+}

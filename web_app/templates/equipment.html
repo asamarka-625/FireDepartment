@@ -6,12 +6,18 @@
 <div class="equipment-page">
     <h1>Сведения о технике: {{ section }}</h1>
 
+    {% if relocation_banner %}
+    <div class="banner warning" id="relocationBanner">{{ relocation_banner }}</div>
+    {% endif %}
+
     <div class="table-wrapper">
         <table class="equipment-table">
             <thead>
                 <tr>
                     <th>ID</th>
                     <th>Название</th>
+                    <th>Обозначение в записке</th>
+                    <th>Ход выезда</th>
                     <th>Модель</th>
                     <th>Номер</th>
                     <th>Старший на машине</th>
@@ -24,11 +30,31 @@
             </thead>
             <tbody>
                 {% for m in machineries %}
-                <tr data-id="{{ m.id }}">
+                {% set received = m.relocation and m.relocation.direction == "in" %}
+                {% set is_ac = m.short_title and m.short_title|upper == "АЦ" %}
+                <tr data-id="{{ m.id }}" data-short-title="{{ m.short_title or '' }}" data-title="{{ m.title }}"
+                    {% if received %}class="received-row" data-crew-only="1"{% endif %}>
                     <td>{{ m.id }}</td>
-                    <td>{{ m.title }}</td>
-                    <td>{{ m.model }}</td>
-                    <td>{{ m.number }}</td>
+                    <td>
+                        {{ m.title }}
+                        {% if received %}
+                            <div class="relocation-tag">Принята из {{ m.relocation.partner }}</div>
+                        {% endif %}
+                    </td>
+                    <td class="label-text">{{ m.label }}</td>
+                    <!-- ход выезда есть только у автоцистерн; правит штатная ПСЧ -->
+                    <td>
+                        {% if is_ac %}
+                            <span class="view departure-order-text">{{ m.departure_order or "—" }}</span>
+                            {% if not received %}
+                            <input type="number" min="1" step="1"
+                                   class="edit hidden departure-order-input"
+                                   value="{{ m.departure_order or '' }}">
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                    <td>{{ m.model or "" }}</td>
+                    <td>{{ m.number or "" }}</td>
 
                     <!-- supervisor -->
                     <td>
@@ -61,9 +87,10 @@
                     <td>
                         <span class="view status-text">{{ m.status }}</span>
 
-                        <select class="edit status-select hidden">
+                        {% if not received %}
+                        <select class="edit status-select hidden" data-original="{{ m.status }}">
                             {% set statuses = [
-                                "Включено", "Резерв", "Резерв (ЛСО)",
+                                "Включено", "Резерв", "Резерв (ЛСО)", "Резерв (ЛСБ)",
                                 "Ремонт", "ТО-1", "ТО-2", "ВП", "Выключена"
                             ] %}
                             {% for s in statuses %}
@@ -72,6 +99,7 @@
                                 </option>
                             {% endfor %}
                         </select>
+                        {% endif %}
                     </td>
 
                     <!-- обслуживание -->
@@ -89,6 +117,7 @@
                             {% endif %}
                         </div>
 
+                        {% if not received %}
                         <div class="edit hidden maintenance-edit">
                             <input type="text" placeholder="Причина"
                                    value="{{ m.maintenance.note if m.maintenance else '' }}"
@@ -98,6 +127,7 @@
                                    value="{{ m.maintenance.date if m.maintenance else '' }}"
                                    class="maintenance-date">
                         </div>
+                        {% endif %}
                     </td>
 
                     <!-- кнопки -->
@@ -105,20 +135,93 @@
                         <button class="edit-btn">Редактировать</button>
                         <button class="save-btn hidden">Сохранить</button>
                         <button class="cancel-btn hidden">Отмена</button>
+                        {% if not received and relocation_targets %}
+                        <button class="relocate-btn" data-machinery-id="{{ m.id }}"
+                                data-title="{{ m.label }}">Передислокация</button>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+
         <div class="table-actions">
-            <button id="createReportBtn" class="create-report-btn" data-section="{{ section_id }}">
-                Создать строевую записку
+            <button id="createReportBtn" class="create-report-btn" data-section="{{ section_id }}"
+                    data-submitted="{{ 1 if report_submitted_today else 0 }}">
+                {{ "Обновить строевую записку" if report_submitted_today else "Создать строевую записку" }}
             </button>
+            <button class="create-report-btn secondary" data-export-url="/api/v1/reports/export/{{ section_id }}">
+                Экспорт строевой записки ПСЧ
+            </button>
+        </div>
+    </div>
+
+    {% if relocated_out %}
+    <h2>Передислоцированная техника</h2>
+    <p class="hint">Штатная принадлежность не меняется. В боевом расчёте этой ПСЧ машины не участвуют.</p>
+    <div class="table-wrapper">
+        <table class="equipment-table">
+            <thead>
+                <tr>
+                    <th>Название</th>
+                    <th>Модель</th>
+                    <th>Номер</th>
+                    <th>Принимающая ПСЧ</th>
+                    <th>С даты</th>
+                    <th>Дата возврата</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in relocated_out %}
+                <tr data-relocated-id="{{ m.id }}">
+                    <td>{{ m.title }}</td>
+                    <td>{{ m.model or "" }}</td>
+                    <td>{{ m.number or "" }}</td>
+                    <td>{{ m.relocation.partner }}</td>
+                    <td>{{ m.relocation.date_from.strftime("%d.%m.%Y") }}</td>
+                    <td>
+                        <input type="date" class="relocation-return-date"
+                               value="{{ m.relocation.date_to or '' }}">
+                    </td>
+                    <td>
+                        <button class="relocation-save-btn">Изменить дату</button>
+                        <button class="relocation-cancel-btn">Вернуть в расчёт</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <p class="hint">Пустая дата возврата — передислокация до конца текущих суток (закрывается в 00:00).</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- modal: передислокация -->
+<div id="relocationModal" class="modal hidden">
+    <div class="modal-content">
+        <h3>Передислокация: <span id="relocationTitle"></span></h3>
+
+        <label for="relocationTarget">Принимающая ПСЧ</label>
+        <select id="relocationTarget">
+            {% for t in relocation_targets %}
+            <option value="{{ t.id }}">{{ t.title }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="relocationReturnDate">Дата возврата (необязательно)</label>
+        <input type="date" id="relocationReturnDate">
+        <p class="hint">Без даты — на текущие сутки, автоматически закрывается в 00:00.
+            Допустима только техника в состоянии «Включено» или «Резерв».</p>
+
+        <div class="modal-actions">
+            <button id="cancelRelocationBtn">Отмена</button>
+            <button id="submitRelocationBtn">Передислоцировать</button>
         </div>
     </div>
 </div>
 
-<!-- modal -->
+<!-- modal: строевая записка -->
 <div id="reportModal" class="modal hidden">
     <div class="modal-content">
         <h3>Создание строевой записки</h3>

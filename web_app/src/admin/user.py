@@ -1,5 +1,6 @@
 # Внешние зависимости
-from typing import Type
+from typing import Type, Any
+from starlette.requests import Request
 from sqladmin import ModelView
 from sqladmin.forms import Form
 from wtforms import PasswordField
@@ -14,13 +15,15 @@ class UserAdmin(ModelView, model=User):
     column_list = [
         User.id,
         User.email,
-        User.department
+        User.department,
+        User.section
     ]
 
     column_labels = {
         User.id: "Идентификатор",
         User.email: "Электронная почта",
-        User.department: "Пожарный участок",
+        User.department: "Пожарно-спасательный отряд (ПСО)",
+        User.section: "ПСЧ (заполнять для учётной записи уровня ПСЧ; пусто — уровень ПСО, все ПСЧ отряда)",
         User.admin: "Администратор",
         User.created_at: "Создан",
         User.updated_at: "Последние обновление",
@@ -40,6 +43,12 @@ class UserAdmin(ModelView, model=User):
         return form_class
 
     async def on_model_change(self, data, model, is_created, request):
+        # Учётная запись уровня ПСЧ: часть должна входить в отряд (ПСО) пользователя
+        section = data.get("section")
+        department = data.get("department")
+        if section is not None and department is not None and section.department_id != department.id:
+            raise ValueError("Выбранная ПСЧ не входит в выбранный отряд (ПСО)")
+
         # Хэширование пароля
         if "password" in data and data["password"]:
             data["password_hash"] = get_password_hash(data["password"])
@@ -57,6 +66,7 @@ class UserAdmin(ModelView, model=User):
         "email",
         "password",
         "department",
+        "section",
         "admin"
     ]
 
@@ -64,6 +74,7 @@ class UserAdmin(ModelView, model=User):
         User.id,
         User.email,
         User.department,
+        User.section,
         User.admin,
         User.created_at,
         User.updated_at
@@ -73,6 +84,7 @@ class UserAdmin(ModelView, model=User):
         "email",
         "password",
         "department",
+        "section",
         "admin"
     ]
 

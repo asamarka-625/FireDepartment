@@ -11,7 +11,8 @@
     <aside class="sidebar">
         <div class="sidebar-header">
             {% if admin %}
-                <a href="/72tldh/reports/export" class="export-btn" id="exportReportBtn">
+                <a href="/72tldh/reports/export" class="export-btn" id="exportReportBtn"
+                   data-export-url="/api/v1/reports/export">
                     Экспорт строевой записки
                 </a>
             {% endif %}

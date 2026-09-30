@@ -63,6 +63,19 @@ async function logoutRequest() {
     }
 }
 
+// Текст ошибки из ответа сервера (detail), иначе запасной
+async function errorMessage(response, fallback) {
+    try {
+        const data = await response.json();
+        if (typeof data.detail === "string" && data.detail) {
+            return data.detail;
+        }
+    } catch (e) {
+        // тело не JSON — используем запасной текст
+    }
+    return fallback;
+}
+
 function showToast(message, type = "info", duration = 3000) {
     const container = document.getElementById("toast-container");
 
@@ -118,23 +131,26 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    const exportBtn = document.getElementById("exportReportBtn");
+    // Кнопки экспорта: администратор — общая выгрузка, диспетчер — выгрузка своей ПСЧ (data-export-url)
+    const exportBtns = document.querySelectorAll("[data-export-url]");
+    let exportUrl = null;
     const exportModal = document.getElementById("exportModal");
     const creatorInput = document.getElementById("creatorInput");
     const cancelExportBtn = document.getElementById("cancelExportBtn");
     const submitExportBtn = document.getElementById("submitExportBtn");
 
-    if (exportBtn && exportModal) {
+    if (exportBtns.length && exportModal) {
         // открыть модалку
-        exportBtn.addEventListener("click", (e) => {
+        exportBtns.forEach(btn => btn.addEventListener("click", (e) => {
             e.preventDefault();
+            exportUrl = btn.dataset.exportUrl;
             creatorInput.value = "";
             submitExportBtn.disabled = true;
 
             document.getElementById("missingSections").classList.add("hidden"); // сброс
 
             exportModal.classList.remove("hidden");
-        });
+        }));
 
         // включать кнопку только если поле заполнено
         creatorInput.addEventListener("input", () => {
@@ -154,13 +170,13 @@ document.addEventListener("DOMContentLoaded", () => {
             submitExportBtn.disabled = true;
 
             try {
-                const response = await apiRequest("/api/v1/reports/export", {
+                const response = await apiRequest(exportUrl, {
                     method: "POST",
                     body: JSON.stringify({ creator: creator })
                 });
 
                 if (!response.ok) {
-                    showToast("Ошибка экспорта", "error");
+                    showToast(await errorMessage(response, "Ошибка экспорта"), "error");
                     submitExportBtn.disabled = false;
                     return;
                 }

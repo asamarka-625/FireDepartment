@@ -1,5 +1,5 @@
 # Внешние зависимости
-from typing import Annotated, List
+from typing import Annotated, List, Optional
 from datetime import date
 from pydantic import BaseModel, Field, ConfigDict
 # Внутренние модули
@@ -11,6 +11,7 @@ class ReportScheme(BaseModel):
     id: Annotated[int, Field(ge=1)]
     machinery: List[MachineryScheme]
     section: Annotated[str, Field(max_length=128)]
+    section_id: Optional[int] = None
     date: date
     total_personnel: Annotated[int, Field(ge=0)]
     personnel: Annotated[int, Field(ge=0)]

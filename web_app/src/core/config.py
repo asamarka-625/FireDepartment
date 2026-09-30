@@ -34,6 +34,9 @@ class Config(BaseSettings):
     SAVE_REPORT: str =  Field(alias="SAVE_REPORT")
     TEMPLATE_NAME: str = Field(alias="TEMPLATE_NAME")
 
+    # Разрешить передислокацию техники в любую ПСЧ гарнизона (по умолчанию — только внутри своего ПСО)
+    RELOCATION_ALLOW_GARRISON: bool = Field(alias="RELOCATION_ALLOW_GARRISON", default=False)
+
     allowed_origins_env: str = Field(alias="ALLOWED_ORIGINS", default="*")
 
     LOG_LEVEL: str = Field(alias="LOG_LEVEL", default="INFO")

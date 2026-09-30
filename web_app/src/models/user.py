@@ -1,4 +1,5 @@
 # Внешние зависимости
+from typing import Optional
 import sqlalchemy.orm as so
 import sqlalchemy as sa
 # Внутренние модули
@@ -32,6 +33,16 @@ class User(Base):
         "Department",
         back_populates="users"
     )
+
+    # Уровень учётной записи:
+    #   section_id IS NULL  — учётная запись уровня ПСО: видит и подаёт записки за ВСЕ ПСЧ своего отряда;
+    #   section_id указан   — учётная запись уровня ПСЧ: только за свою часть.
+    section_id: so.Mapped[Optional[int]] = so.mapped_column(
+        sa.ForeignKey("sections.id"),
+        index=True,
+        nullable=True
+    )
+    section: so.Mapped[Optional["Section"]] = so.relationship("Section")
 
     def __repr__(self):
         return f"<User(id={self.id}, email={self.email})>"

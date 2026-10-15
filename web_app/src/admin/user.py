@@ -6,7 +6,7 @@ from sqladmin.forms import Form
 from wtforms import PasswordField
 from wtforms.validators import DataRequired
 # Внутренние модули
-from web_app.src.models import User
+from web_app.src.models import User, Section
 from web_app.src.utils import get_password_hash
 
 
@@ -43,11 +43,33 @@ class UserAdmin(ModelView, model=User):
         return form_class
 
     async def on_model_change(self, data, model, is_created, request):
+        # В data значения связей приходят идентификаторами (строками), а не ORM-объектами,
+        # поэтому берём именно id и, если нужно, подгружаем объект из БД.
+        def _ident(value):
+            if value is None:
+                return None
+            pk = getattr(value, "id", value)
+            if pk in ("", None):
+                return None
+            try:
+                return int(pk)
+            except (TypeError, ValueError):
+                return None
+
+        section_id = _ident(data.get("section"))
+        department_id = _ident(data.get("department"))
+
         # Учётная запись уровня ПСЧ: часть должна входить в отряд (ПСО) пользователя
-        section = data.get("section")
-        department = data.get("department")
-        if section is not None and department is not None and section.department_id != department.id:
-            raise ValueError("Выбранная ПСЧ не входит в выбранный отряд (ПСО)")
+        if section_id is not None and department_id is not None:
+            if self.is_async:
+                async with self.session_maker(expire_on_commit=False) as session:
+                    section = await session.get(Section, section_id)
+            else:
+                with self.session_maker(expire_on_commit=False) as session:
+                    section = session.get(Section, section_id)
+
+            if section is not None and section.department_id != department_id:
+                raise ValueError("Выбранная ПСЧ не входит в выбранный отряд (ПСО)")
 
         # Хэширование пароля
         if "password" in data and data["password"]:

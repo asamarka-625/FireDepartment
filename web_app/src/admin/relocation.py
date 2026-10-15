@@ -21,7 +21,7 @@ class RelocationAdmin(ModelView, model=Relocation):
         Relocation.from_section: "Отдающая ПСЧ",
         Relocation.to_section: "Принимающая ПСЧ",
         Relocation.date_from: "Дата начала",
-        Relocation.date_to: "Дата возврата (пусто — до конца суток начала)",
+        Relocation.date_to: "Дата возврата (пусто — до конца дежурных суток начала)",
         Relocation.created_by_id: "Оформил (ID пользователя)",
         Relocation.closed_by_id: "Закрыл досрочно (ID пользователя)",
         Relocation.created_at: "Создана",

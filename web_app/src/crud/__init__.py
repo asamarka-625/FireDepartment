@@ -5,4 +5,4 @@ from web_app.src.crud.machinery import (sql_get_machineries, sql_get_machinery_a
 from web_app.src.crud.relocation import sql_create_relocation, sql_update_relocation
 from web_app.src.crud.report import (sql_create_report, sql_get_reports, sql_get_all_reports,
                                      sql_get_today_report_signature)
-from web_app.src.crud.section import sql_get_sections, sql_get_miss_sections_title
+from web_app.src.crud.section import sql_get_sections, sql_get_miss_sections_title, sql_get_sections_title

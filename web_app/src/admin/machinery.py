@@ -24,11 +24,11 @@ class MachineryAdmin(ModelView, model=Machinery):
 
     column_labels = {
         Machinery.id: "Идентификатор",
-        Machinery.title: "Название",
+        Machinery.title: "Тип техники",
         Machinery.model: "Модель",
         Machinery.number: "Номер",
         Machinery.status: "Статус",
-        Machinery.kind: "Категория)",
+        Machinery.kind: "Категория",
         Machinery.short_title: "Краткое обозначение",
         Machinery.departure_order: "Ход выезда",
         Machinery.relocations: "Передислокации",

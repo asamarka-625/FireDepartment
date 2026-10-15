@@ -14,9 +14,11 @@
         <table class="equipment-table">
             <thead>
                 <tr>
+                    {% if admin %}
                     <th>ID</th>
-                    <th>Название</th>
-                    <th>Обозначение в записке</th>
+                    <th>Тип техники</th>
+                    {% endif %}
+                    <th>Краткое обозначение</th>
                     <th>Ход выезда</th>
                     <th>Модель</th>
                     <th>Номер</th>
@@ -24,7 +26,7 @@
                     <th>Количество личного состава</th>
                     <th>ГДЗС</th>
                     <th>Статус</th>
-                    <th>Обслуживание</th>
+                    <th>Комментарий</th>
                     <th></th>
                 </tr>
             </thead>
@@ -34,14 +36,16 @@
                 {% set is_ac = m.short_title and m.short_title|upper == "АЦ" %}
                 <tr data-id="{{ m.id }}" data-short-title="{{ m.short_title or '' }}" data-title="{{ m.title }}"
                     {% if received %}class="received-row" data-crew-only="1"{% endif %}>
+                    {% if admin %}
                     <td>{{ m.id }}</td>
-                    <td>
-                        {{ m.title }}
+                    <td>{{ m.title }}</td>
+                    {% endif %}
+                    <td class="label-text">
+                        {{ m.label }}
                         {% if received %}
                             <div class="relocation-tag">Принята из {{ m.relocation.partner }}</div>
                         {% endif %}
                     </td>
-                    <td class="label-text">{{ m.label }}</td>
                     <!-- ход выезда есть только у автоцистерн; правит штатная ПСЧ -->
                     <td>
                         {% if is_ac %}
@@ -87,7 +91,17 @@
                     <td>
                         <span class="view status-text">{{ m.status }}</span>
 
-                        {% if not received %}
+                        {% if received %}
+                        <!-- принимающая ПСЧ выбирает статус из допустимых: «Включено» / «Резерв» (п. 3.4) -->
+                        <select class="edit status-select hidden" data-original="{{ m.status }}">
+                            {% set statuses = ["Включено", "Резерв", "Резерв (ЛСО)", "Резерв (ЛСБ)"] %}
+                            {% for s in statuses %}
+                                <option value="{{ s }}" {% if m.status == s %}selected{% endif %}>
+                                    {{ s }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        {% else %}
                         <select class="edit status-select hidden" data-original="{{ m.status }}">
                             {% set statuses = [
                                 "Включено", "Резерв", "Резерв (ЛСО)", "Резерв (ЛСБ)",
@@ -192,7 +206,7 @@
                 {% endfor %}
             </tbody>
         </table>
-        <p class="hint">Пустая дата возврата — передислокация до конца текущих суток (закрывается в 00:00).</p>
+        <p class="hint">Пустая дата возврата — передислокация до конца текущих дежурных суток (08:59 следующего дня).</p>
     </div>
     {% endif %}
 </div>
@@ -211,7 +225,7 @@
 
         <label for="relocationReturnDate">Дата возврата (необязательно)</label>
         <input type="date" id="relocationReturnDate">
-        <p class="hint">Без даты — на текущие сутки, автоматически закрывается в 00:00.
+        <p class="hint">Без даты — на текущие дежурные сутки, автоматически закрывается в 08:59 следующего дня.
             Допустима только техника в состоянии «Включено» или «Резерв».</p>
 
         <div class="modal-actions">

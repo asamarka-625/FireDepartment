@@ -5,7 +5,6 @@ import sqlalchemy as sa
 import sqlalchemy.orm as so
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 from fastapi import HTTPException, status
 # Внутренние модули
 from web_app.src.core import cfg, connection
@@ -48,7 +47,8 @@ async def sql_create_report(
     try:
         # Состав техники — по единому правилу «моя техника сегодня»; машины, ушедшие в передислокацию,
         # входят отдельной строкой (в боевом расчёте не участвуют). Состояние, причина и дата обслуживания
-        # берутся строго из актуальной карточки. Повторная подача за сутки перезаписывает предыдущую (снапшот дня — один).
+        # берутся строго из актуальной карточки. История сохраняется: каждая подача — новая запись,
+        # предыдущие записки за те же дежурные сутки не затираются (п. 1.2).
         machineries = await sql_get_machineries(
             section_id=section_id,
             session=session,
@@ -56,7 +56,7 @@ async def sql_create_report(
             no_decor=True
         )
 
-        stmt = pg_insert(Report).values(
+        stmt = sa.insert(Report).values(
             data=[machinery.model_dump(mode="json", exclude={"label"}) for machinery in machineries],
             section_id=section_id,
             leadership=leadership,
@@ -65,19 +65,6 @@ async def sql_create_report(
             personnel=personnel,
             current_personnel=current_personnel,
             operational_machinery=operational_machinery
-        )
-
-        stmt = stmt.on_conflict_do_update(
-            index_elements=["date", "section_id"],
-            set_=dict(
-                data=stmt.excluded.data,
-                leadership=leadership,
-                total_personnel=total_personnel,
-                personnel=personnel,
-                current_personnel=current_personnel,
-                operational_machinery=operational_machinery,
-                updated_at=sa.func.now()
-            )
         )
 
         await session.execute(stmt)
@@ -136,16 +123,24 @@ async def sql_get_all_reports(
     section_ids: Optional[Sequence[int]] = None,
 ) -> Tuple[List[ReportScheme], List[int]]:
     try:
+        # За дежурные сутки у одной ПСЧ может быть несколько записок (история).
+        # Для выгрузки берём последнюю (с наибольшим id) по каждой ПСЧ.
+        latest_ids = (
+            sa.select(sa.func.max(Report.id))
+            .where(Report.date == today_msk())
+        )
+        if section_ids is not None:
+            latest_ids = latest_ids.where(Report.section_id.in_(list(section_ids)))
+        latest_ids = latest_ids.group_by(Report.section_id)
+
         stmt = (
             sa.select(Report)
-            .where(Report.date == today_msk())
+            .where(Report.id.in_(latest_ids))
             .options(
                 so.joinedload(Report.section)
             )
             .order_by(Report.id)
         )
-        if section_ids is not None:
-            stmt = stmt.where(Report.section_id.in_(list(section_ids)))
 
         reports_result = await session.execute(stmt)
 
@@ -204,6 +199,9 @@ async def sql_get_today_report_signature(
                 Report.section_id == section_id,
                 Report.date == today_msk()
             )
+            # история за сутки может содержать несколько записок — берём последнюю (актуальную)
+            .order_by(Report.id.desc())
+            .limit(1)
         )
         data = data_result.scalar_one_or_none()
 

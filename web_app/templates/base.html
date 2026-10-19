@@ -15,6 +15,11 @@
                    data-export-url="/api/v1/reports/export">
                     Экспорт строевой записки
                 </a>
+            {% elif can_export_department %}
+                <a href="#" class="export-btn" id="exportDepartmentReportBtn"
+                   data-export-url="/api/v1/reports/export/department">
+                    Экспорт строевой записки (отряд)
+                </a>
             {% endif %}
 
             <button id="logoutBtn" class="logout-btn">Выйти</button>

@@ -95,7 +95,7 @@ class MachineryScheme(BaseModel):
 class CreateRelocationRequest(BaseModel):
     machinery_id: Annotated[int, Field(ge=1)]
     to_section_id: Annotated[int, Field(ge=1)]
-    # Дата возврата. Пусто — до конца текущих суток (закрывается в 00:00)
+    # Дата возврата. Пусто — до конца текущих дежурных суток (08:59 следующего дня)
     date_return: Optional[date_type] = None
 
     model_config = ConfigDict(frozen=True)

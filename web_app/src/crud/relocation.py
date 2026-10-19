@@ -67,7 +67,7 @@ async def sql_create_relocation(
         if date_return is not None and date_return <= today:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Дата возврата должна быть позже сегодняшней (или не указана — до конца суток)"
+                detail="Дата возврата должна быть позже сегодняшних дежурных суток (или не указана — до конца текущих дежурных суток)"
             )
 
         # п. 3.1: у одной машины — не более одной активной передислокации
@@ -90,7 +90,10 @@ async def sql_create_relocation(
             to_section_id=to_section_id,
             date_from=today,
             date_to=date_return,
-            created_by_id=user_id
+            created_by_id=user_id,
+            # Начальный статус в принимающей ПСЧ — текущий (он относится к допустимым для
+            # передислокации); дальше его меняет диспетчер принявшей части (п. 3.4)
+            received_status=machinery.status
         ))
 
         await session.commit()

@@ -55,8 +55,10 @@ class Report(Base):
         back_populates="reports"
     )
 
+    # История сохраняется: за одни дежурные сутки у ПСЧ может быть несколько записок
+    # (каждая подача — отдельная запись). «Актуальная» за сутки — с наибольшим id.
     __table_args__ = (
-        sa.UniqueConstraint("date", "section_id", name="uq_report_date_section"),
+        sa.Index("ix_report_section_date", "section_id", "date"),
     )
 
     def __repr__(self):

@@ -159,14 +159,14 @@ function createReportCard(report) {
                 <table class="report-table">
                     <thead>
                         <tr>
-                            <th>Название</th>
+                            <th>Тип техники</th>
                             <th>Модель</th>
                             <th>Номер</th>
                             <th>Старший</th>
                             <th>Личный состав</th>
                             <th>ГДЗС</th>
                             <th>Статус</th>
-                            <th>Обслуживание</th>
+                            <th>Комментарий</th>
                         </tr>
                     </thead>
                     <tbody>

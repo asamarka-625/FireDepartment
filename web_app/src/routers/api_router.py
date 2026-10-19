@@ -11,8 +11,8 @@ from web_app.src.schemas import (UserScheme, UpdateMachineryRequest, ReportSchem
                                  CreateExportReportScheme, CreateRelocationRequest, UpdateRelocationRequest,
                                  CancelRelocationRequest)
 from web_app.src.crud import (sql_get_machinery_access, sql_update_machinery, sql_create_report, sql_get_reports,
-                              sql_get_all_reports, sql_get_miss_sections_title, sql_get_all_machineries,
-                              sql_create_relocation, sql_update_relocation)
+                              sql_get_all_reports, sql_get_miss_sections_title, sql_get_sections_title,
+                              sql_get_all_machineries, sql_create_relocation, sql_update_relocation)
 from web_app.src.utils import creator_reports
 
 
@@ -213,6 +213,43 @@ async def export_reports(
 
     # Лист «Техника» — только по ПСЧ, подавшим строевую записку (как и лист «Строевая записка»)
     machineries = await sql_get_all_machineries(section_ids=section_ids)
+
+    buffer = creator_reports.run(
+        reports=reports,
+        machineries=machineries,
+        creator=data.creator
+    )
+
+    return _xlsx_response(buffer, miss_sections)
+
+
+@router.post(
+    "/reports/export/department",
+    response_class=StreamingResponse,
+    summary="Выгрузка строевой записки на уровне ПСО (все ПСЧ отряда пользователя)"
+)
+async def export_department_report(
+    data: CreateExportReportScheme,
+    current_user: UserScheme = Depends(authorized_user)
+):
+    # ПСЧ, доступные пользователю: для учётной записи уровня ПСО — все ПСЧ его отряда.
+    accessible_ids = await get_accessible_section_ids(current_user)
+
+    reports, submitted_ids = await sql_get_all_reports(section_ids=accessible_ids)
+    if not reports:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="За сегодня ни одна ПСЧ отряда не подала строевую записку"
+        )
+
+    # Не подавшие записку: администратору — по всему гарнизону, уровню ПСО — в пределах отряда
+    if accessible_ids is None:
+        miss_sections = await sql_get_miss_sections_title(section_ids=submitted_ids)
+    else:
+        missing_ids = [sid for sid in accessible_ids if sid not in submitted_ids]
+        miss_sections = await sql_get_sections_title(section_ids=missing_ids)
+
+    machineries = await sql_get_all_machineries(section_ids=submitted_ids)
 
     buffer = creator_reports.run(
         reports=reports,

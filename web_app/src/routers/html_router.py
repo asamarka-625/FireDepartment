@@ -46,6 +46,9 @@ async def get_info_page_by_user(
 
     page_info["sections"] = sections
 
+    # Учётная запись уровня ПСО (не админ, section_id пуст): доступна общая выгрузка по всему отряду
+    page_info["can_export_department"] = (not user.admin) and (user.section_id is None)
+
     return page_info
 
 

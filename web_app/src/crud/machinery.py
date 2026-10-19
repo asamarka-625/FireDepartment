@@ -53,12 +53,16 @@ def build_machinery_scheme(
     viewer_section_id: Optional[int] = None
 ) -> MachineryScheme:
     relocation_info = None
+    status_value = machinery.status
 
     if relocation is not None:
         # Если смотрим со стороны принимающей ПСЧ — машина принята («in»), иначе передана («out»)
         if viewer_section_id is not None and relocation.to_section_id == viewer_section_id:
             direction: Literal["in", "out"] = "in"
             partner = relocation.from_section
+            # В принимающей ПСЧ статус машины определяет её диспетчер (п. 3.4)
+            if relocation.received_status is not None:
+                status_value = relocation.received_status
         else:
             direction = "out"
             partner = relocation.to_section
@@ -78,7 +82,7 @@ def build_machinery_scheme(
         title=machinery.title,
         model=machinery.model,
         number=machinery.number,
-        status=STATUS_MAINTENANCE_MAP[machinery.status.value],
+        status=STATUS_MAINTENANCE_MAP[status_value.value],
         supervisor=machinery.supervisor,
         current_personnel=machinery.current_personnel,
         gdzs=machinery.gdzs,
@@ -200,6 +204,30 @@ async def sql_update_machinery(
             current_personnel=update.current_personnel,
             gdzs=update.gdzs
         )
+
+        if crew_only:
+            # Принимающая ПСЧ выбирает статус машины (п. 3.4): «Включено» или «Резерв».
+            # Он хранится на активной передислокации, штатный статус машины не меняется.
+            if update.status is not None:
+                received_status = REVERSE_STATUS_MAINTENANCE_MAP.get(update.status)
+                if received_status is None or received_status not in RELOCATABLE_STATUSES:
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail="Принимающая ПСЧ может установить только «Включено» или «Резерв» "
+                               "(включая «Резерв (ЛСО)» и «Резерв (ЛСБ)»)"
+                    )
+
+                relocation_result = await session.execute(
+                    sa.select(Relocation)
+                    .where(
+                        Relocation.machinery_id == machinery.id,
+                        Relocation.active_clause(today_msk())
+                    )
+                    .with_for_update()
+                )
+                relocation = relocation_result.scalar_one_or_none()
+                if relocation is not None:
+                    relocation.received_status = received_status
 
         if not crew_only:
             new_status = REVERSE_STATUS_MAINTENANCE_MAP.get(update.status, StatusMaintenance.OFF)
@@ -341,6 +369,10 @@ async def sql_get_all_machineries(
                 "maintenance_date": m.maintenance.date if m.maintenance else None,
                 "relocation_to": relocation.to_section.title if relocation else None,
                 "relocation_from_date": relocation.date_from if relocation else None,
+                "relocation_status": (
+                    STATUS_MAINTENANCE_MAP[relocation.received_status.value]
+                    if relocation and relocation.received_status else None
+                ),
             })
 
         return machineries

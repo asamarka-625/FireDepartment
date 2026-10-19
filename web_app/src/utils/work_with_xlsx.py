@@ -8,7 +8,6 @@ from openpyxl.styles import Font, PatternFill, Border, Side, Alignment
 # Внутренние модули
 from web_app.src.core import cfg
 from web_app.src.utils.sorting import sort_machinery, is_special, machinery_sort_key
-from web_app.src.utils.machinery_rules import machinery_label
 
 if TYPE_CHECKING:
     # Только для аннотаций (schemas импортируют utils.machinery_rules — избегаем циклического импорта)
@@ -416,14 +415,12 @@ class ReportExelCreator:
         machineries: List[dict]
     ) -> None:
         headers = [
-            "Подразделение", "Название", "Обозначение", "Ход выезда", "Модель", "Номер", "Статус",
-            "Обслуживание", "Дата обслуживания", "Категория"
+            "Подразделение", "Тип техники", "Модель", "Номер", "Статус", "Комментарий", "Дата"
         ]
-        cols = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
+        cols = ["A", "B", "C", "D", "E", "F", "G"]
 
         widths = {
-            "A": 24, "B": 26, "C": 14, "D": 12, "E": 22, "F": 16,
-            "G": 34, "H": 26, "I": 16, "J": 16
+            "A": 24, "B": 26, "C": 22, "D": 16, "E": 34, "F": 26, "G": 16
         }
         for col, width in widths.items():
             self.ws.column_dimensions[col].width = width
@@ -456,33 +453,25 @@ class ReportExelCreator:
                 since = m["relocation_from_date"]
                 status_text = f"Передислокация → {m['relocation_to']}" + (
                     f" с {since.strftime('%d.%m.%Y')}" if since else ""
+                ) + (
+                    f" (в части: {m['relocation_status']})" if m.get("relocation_status") else ""
                 )
                 status_color: Literal["none", "green", "red", "yellow"] = "yellow"
             else:
                 status_text = m["status"]
                 status_color = self._status_color(m["status"])
 
-            self.create_cell(f"B{row}", m["title"])
-            # Обозначение как в строевой записке: АЦ-1, АЦ-2, АЛ...
-            self.create_cell(
-                f"C{row}",
-                machinery_label(m["title"], m.get("short_title"), m.get("departure_order"))
-            )
-            self.create_cell(f"D{row}", m.get("departure_order") or "")  # ход выезда (у АЦ)
-            self.create_cell(f"E{row}", m["model"] or "")
-            self.create_cell(f"F{row}", m["number"] or "")
-            self.create_cell(f"G{row}", status_text, color_fill=status_color)
-            self.create_cell(f"H{row}", m["maintenance_note"] or "")
+            self.create_cell(f"B{row}", m["title"])        # Тип техники
+            self.create_cell(f"C{row}", m["model"] or "")  # Модель
+            self.create_cell(f"D{row}", m["number"] or "") # Номер
+            self.create_cell(f"E{row}", status_text, color_fill=status_color)  # Статус
+            self.create_cell(f"F{row}", m["maintenance_note"] or "")           # Комментарий
 
             date_val = m["maintenance_date"]
             self.create_cell(
-                f"I{row}",
+                f"G{row}",
                 date_val.strftime("%d.%m.%Y") if date_val else ""
-            )
-            self.create_cell(
-                f"J{row}",
-                "Специальная" if is_special(m.get("kind"), m["title"]) else "Прочая"
-            )
+            )  # Дата
 
         # объединяем "Подразделение" по группам подряд идущих машин
         group_start = start_row

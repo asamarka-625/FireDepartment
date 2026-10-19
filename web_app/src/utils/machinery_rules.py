@@ -1,6 +1,6 @@
 # Внешние зависимости
 from typing import Optional, Set
-from datetime import date, datetime
+from datetime import date, datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 
@@ -9,10 +9,20 @@ MOSCOW_TZ = ZoneInfo("Europe/Moscow")
 # Краткое обозначение автоцистерны (кириллица)
 AUTOTANKER = "АЦ"
 
+# Смена караула / начало дежурных суток по Москве. Дежурные сутки идут с 09:00 текущего дня
+# до 08:59 следующего (а не по астрономической полуночи): всё, что происходит до 09:00,
+# относится к дежурным суткам, начавшимся накануне.
+DUTY_DAY_START = time(9, 0)
 
-# Текущая дата по Санкт-Петербургу (границы суток — 00:00 по Москве)
+
+# Текущие дежурные сутки (дата их начала) по Москве.
+# До 09:00 — это ещё предыдущая календарная дата (дежурство, начатое накануне в 09:00).
 def today_msk() -> date:
-    return datetime.now(MOSCOW_TZ).date()
+    now = datetime.now(MOSCOW_TZ)
+    duty_date = now.date()
+    if now.time() < DUTY_DAY_START:
+        duty_date -= timedelta(days=1)
+    return duty_date
 
 
 # Краткое обозначение → нормализованный вид (верхний регистр, без пробелов)

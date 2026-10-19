@@ -31,6 +31,32 @@ async def sql_get_sections(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unexpected server error")
 
 
+# Получаем названия ПСЧ по набору идентификаторов (в порядке id)
+@connection
+async def sql_get_sections_title(
+    section_ids: List[int],
+    session: AsyncSession,
+) -> List[str]:
+    try:
+        if not section_ids:
+            return []
+
+        result = await session.execute(
+            sa.select(Section.title)
+            .where(Section.id.in_(list(section_ids)))
+            .order_by(Section.id)
+        )
+        return list(result.scalars().all())
+
+    except SQLAlchemyError as e:
+        cfg.logger.error(f"Database error get sections title by ids: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database error")
+
+    except Exception as e:
+        cfg.logger.error(f"Unexpected error get sections title by ids: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unexpected server error")
+
+
 # Получаем пожарные отделения, которых нет в списке
 @connection
 async def sql_get_miss_sections_title(
